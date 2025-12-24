@@ -74,7 +74,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: ${{ steps.release_notes.outputs.changelog }}
           draft: false
-          prerelease: ${{ github.ref_name =~ /-.*/ }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release Summary
