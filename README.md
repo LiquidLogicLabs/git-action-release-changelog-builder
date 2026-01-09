@@ -79,6 +79,7 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 | `postfixMessage` | No | - | Message to append to changelog |
 | `includeOpen` | No | `false` | Include open pull requests |
 | `failOnError` | No | `false` | Fail the action on errors |
+| `verbose` | No | `false` | Enable verbose debug logging |
 
 \* Either `fromTag`/`toTag` must be provided, or the action must run on a tag
 

@@ -7,3 +7,4 @@ export declare function detectPlatform(inputPlatform?: string, baseUrl?: string)
  * Get the appropriate API base URL for the platform
  */
 export declare function getApiBaseUrl(platform: ProviderPlatform, inputBaseUrl?: string): string;
+//# sourceMappingURL=platform.d.ts.map

@@ -1,13 +1,17 @@
 name: Test
 
 on:
-  workflow_call:
+  workflow_call:  # Called by CI workflow
+  workflow_dispatch:  # Allow manual triggering
 
 permissions:
   contents: read
 
 jobs:
   test:
+    # Always run when called via workflow_call or workflow_dispatch
+    # This workflow only has workflow_call and workflow_dispatch triggers, so it should always run
+    if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,12 +26,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run linter
-        run: npm run lint
+      - name: Verify Jest is installed
+        run: npm run jest:version
 
-      - name: Type check
-        run: npx tsc --noEmit
+      - name: Build
+        run: npm run build
 
-      - name: Run tests
-        run: npm test
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run integration tests
+        run: npm run test:integration
 

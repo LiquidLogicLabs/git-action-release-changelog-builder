@@ -58,6 +58,10 @@ inputs:
     description: 'Defines if the action should result in a build failure, if an error was discovered'
     required: false
     default: 'false'
+  verbose:
+    description: 'Enable verbose debug logging'
+    required: false
+    default: 'false'
 outputs:
   changelog:
     description: The built release changelog built from the merged pull requests

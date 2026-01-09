@@ -7,11 +7,16 @@ import {detectPlatform, getApiBaseUrl} from './platform'
 import {resolveConfiguration} from './config'
 import {generateChangelog} from './changelog'
 import {TagInfo, PullRequestInfo} from './types'
+import {Logger} from './logger'
 import moment from 'moment'
 import * as path from 'path'
 
 async function run(): Promise<void> {
   try {
+    // Get verbose input and create logger
+    const verbose = core.getBooleanInput('verbose')
+    const logger = new Logger(verbose)
+
     core.setOutput('failed', 'false')
 
     // Read inputs
@@ -53,7 +58,8 @@ async function run(): Promise<void> {
       throw new Error('Owner and repo are required')
     }
 
-    core.info(`ℹ️ Processing ${owner}/${repo} on ${platform}`)
+    logger.info(`ℹ️ Processing ${owner}/${repo} on ${platform}`)
+    logger.debug(`Platform: ${platform}, Base URL: ${baseUrl}, Owner: ${owner}, Repo: ${repo}`)
 
     // Initialize provider
     let provider: BaseProvider
@@ -117,14 +123,15 @@ async function run(): Promise<void> {
       throw new Error('Could not determine fromTag')
     }
 
-    core.info(`ℹ️ Comparing ${fromTag.name}...${toTag.name}`)
+    logger.info(`ℹ️ Comparing ${fromTag.name}...${toTag.name}`)
 
     // Fetch tag annotation if requested
     let tagAnnotation: string | null = null
     if (fetchTagAnnotations && toTag) {
       tagAnnotation = await provider.getTagAnnotation(toTag.name)
       if (tagAnnotation) {
-        core.info(`ℹ️ Retrieved tag annotation for ${toTag.name}`)
+        logger.info(`ℹ️ Retrieved tag annotation for ${toTag.name}`)
+        logger.debug(`Tag annotation: ${tagAnnotation.substring(0, 100)}...`)
         core.setOutput('tag_annotation', tagAnnotation)
       }
     }
@@ -175,7 +182,8 @@ async function run(): Promise<void> {
       }
     }
 
-    core.info(`ℹ️ Found ${pullRequests.length} items to include in changelog`)
+    logger.info(`ℹ️ Found ${pullRequests.length} items to include in changelog`)
+    logger.debug(`Mode: ${modeInput}, Pull requests: ${pullRequests.length}`)
 
     // Generate changelog
     const changelog = generateChangelog(
@@ -204,16 +212,21 @@ async function run(): Promise<void> {
       .join(', ')
     core.setOutput('pull_requests', prNumbers)
 
-    core.info('✅ Changelog generated successfully')
+    logger.info('✅ Changelog generated successfully')
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     core.setOutput('failed', 'true')
     
+    // Create logger even in error case (may not have been created if error occurred early)
+    const verbose = core.getBooleanInput('verbose')
+    const logger = new Logger(verbose)
+    
     const failOnError = core.getInput('failOnError') === 'true'
     if (failOnError) {
+      logger.error(errorMessage)
       core.setFailed(errorMessage)
     } else {
-      core.error(errorMessage)
+      logger.error(errorMessage)
     }
   }
 }
