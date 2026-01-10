@@ -14,7 +14,9 @@ permissions:
 
 jobs:
   lint:
-    if: github.event_name != 'push' || github.ref_type != 'tag'  # Skip on tag pushes
+    # Always run when called via workflow_call or workflow_dispatch
+    # Skip only on direct tag pushes (but allow when called from release workflow)
+    if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_type != 'tag')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -43,7 +45,9 @@ jobs:
         run: npm run build
 
   test:
-    if: github.event_name != 'push' || github.ref_type != 'tag'  # Skip on tag pushes
+    # Always run when called via workflow_call or workflow_dispatch
+    # Skip only on direct tag pushes (but allow when called from release workflow)
+    if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_type != 'tag')
     needs: lint  # Tests run after lint
     uses: ./.github/workflows/test.yml
     # test.yml runs: unit tests + integration tests (all tests except E2E)
