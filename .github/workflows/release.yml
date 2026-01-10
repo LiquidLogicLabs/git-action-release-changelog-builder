@@ -16,14 +16,44 @@ permissions:
   pull-requests: read
 
 jobs:
-  ci:
-    uses: ./.github/workflows/ci.yml
-    # CI runs: lint -> unit tests + integration tests
-    # When manually triggered, checkout the specified tag
-    secrets: inherit
+  validate:
+    # Run validation steps inline to avoid context issues when called from tag pushes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify Jest is installed
+        run: npm run jest:version
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run integration tests
+        run: npm run test:integration
 
   release:
-    needs: ci  # REQUIRED: CI must pass before release
+    needs: validate  # REQUIRED: Validation must pass before release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
