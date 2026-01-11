@@ -327,6 +327,7 @@ name: CI
 on:
   push:
     branches: ['**']
+    tags-ignore: ['**']  # Ignore tag pushes (handled by release workflow)
   pull_request:
     branches: ['**']
   workflow_call:  # Allow CI to be called by release workflow
@@ -334,7 +335,7 @@ on:
 
 jobs:
   lint:
-    if: github.event_name != 'push' || github.ref_type != 'tag'  # Skip on tag pushes (handled by release workflow)
+    # No conditions needed - workflow trigger handles filtering
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -367,7 +368,7 @@ jobs:
         # Note: Remove continue-on-error if tests are required
 
   test:
-    if: github.event_name != 'push' || github.ref_type != 'tag'  # Skip on tag pushes (handled by release workflow)
+    # No conditions needed - workflow trigger handles filtering
     needs: lint  # Tests run after lint
     uses: ./.github/workflows/test.yml
     # test.yml runs: unit tests + integration tests (all tests except E2E)
@@ -784,8 +785,8 @@ jobs:
 - **For Node.js actions**: Build and package before release (creates `dist/index.js`)
 - **For composite actions**: Validate `action.yml` and shell script syntax before release
 - **Manual Triggers**: All workflows (`ci.yml`, `test.yml`, `e2e-tests.yml`, `release.yml`) should support `workflow_dispatch` for manual triggering
-- **Skip on Tag Pushes**: CI, test, and E2E workflows should use `if: github.event_name != 'push' || github.ref_type != 'tag'` to skip on tag pushes (release workflow handles tag pushes)
-- **CI Workflow**: Should skip on tag pushes using `if: github.event_name != 'push' || github.ref_type != 'tag'` to avoid duplicate runs while still allowing manual triggers (`workflow_dispatch`) and workflow calls (`workflow_call`)
+- **Skip on Tag Pushes**: CI workflows should use `tags-ignore: ['**']` in the push trigger to ignore tag pushes (release workflow handles tag pushes). This works correctly when workflows are called via `workflow_call`.
+- **CI Workflow**: Should ignore tag pushes using `tags-ignore: ['**']` in the push trigger instead of job conditions. This avoids issues when workflows are called via `workflow_call` and simplifies the configuration.
 - **E2E Tests Pattern**: Use single `TEST` environment with `vars` for configuration and `secrets` for tokens; use `TEST_GITHUB_TOKEN` and `TEST_GITEA_TOKEN` (GitHub doesn't allow `GITHUB_*` secrets in environments)
 - **Floating Tags**: Use `LiquidLogicLabs/git-floating-version-tags-action@v1` to create/update major (`v1`), minor (`v1.2`), and `latest` tags for stable releases
 - **Version Validation**: Use `LiquidLogicLabs/git-tag-validate-version-action@v1` for version format validation and component extraction
