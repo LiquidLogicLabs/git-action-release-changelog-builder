@@ -26,7 +26,7 @@
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
     "format-check": "prettier --check \"src/**/*.ts\"",
-    "prepare": "npm run build",
+    "prepare": "npm run build && husky install",
     "release:patch": "standard-version --release-as patch --skip.changelog && git push --follow-tags",
     "release:minor": "standard-version --release-as minor --skip.changelog && git push --follow-tags",
     "release:major": "standard-version --release-as major --skip.changelog && git push --follow-tags"
@@ -36,21 +36,23 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.1",
     "@octokit/rest": "^22.0.1",
+    "git-platform-detector": "file:../npm-package-git-platfom-detector",
     "gitea-js": "^1.23.0",
     "moment": "^2.30.1",
     "semver": "^7.7.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "globals": "^15.14.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
     "@vercel/ncc": "^0.38.3",
     "eslint": "^9.39.2",
+    "globals": "^15.14.0",
     "jest": "^29.7.0",
     "prettier": "^3.6.2",
+    "husky": "^9.1.7",
     "standard-version": "^9.5.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.9.3"

@@ -7,32 +7,32 @@ describe('platform detection', () => {
     process.env = originalEnv
   })
 
-  it('should detect GitHub from GITHUB_SERVER_URL', () => {
+  it('should detect GitHub from GITHUB_SERVER_URL', async () => {
     process.env = {
       ...originalEnv,
       GITHUB_SERVER_URL: 'https://github.com'
     }
-    const platform = detectPlatform()
+    const platform = await detectPlatform()
     expect(platform).toBe('github')
   })
 
-  it('should detect Gitea from GITEA_SERVER_URL', () => {
+  it('should detect Gitea from GITEA_SERVER_URL', async () => {
     process.env = {
       ...originalEnv,
       GITEA_SERVER_URL: 'https://gitea.com'
     }
-    const platform = detectPlatform()
+    const platform = await detectPlatform()
     expect(platform).toBe('gitea')
   })
 
-  it('should use explicit platform input', () => {
-    const platform = detectPlatform('gitea')
+  it('should use explicit platform input', async () => {
+    const platform = await detectPlatform('gitea')
     expect(platform).toBe('gitea')
   })
 
-  it('should default to GitHub if nothing detected', () => {
+  it('should default to GitHub if nothing detected', async () => {
     process.env = {}
-    const platform = detectPlatform()
+    const platform = await detectPlatform()
     expect(platform).toBe('github')
   })
 

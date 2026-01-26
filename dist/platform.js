@@ -38,6 +38,7 @@ exports.getApiBaseUrl = getApiBaseUrl;
 const core = __importStar(require("@actions/core"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const git_platform_detector_1 = require("git-platform-detector");
 /**
  * Check if a path is a valid local git repository
  */
@@ -54,25 +55,17 @@ function isLocalGitRepo(repositoryPath) {
 /**
  * Detect the platform from environment variables or input
  */
-function detectPlatform(inputPlatform, repositoryPath) {
+async function detectPlatform(inputPlatform, repositoryPath) {
     // If explicitly provided, use it
     if (inputPlatform) {
-        if (inputPlatform === 'github' || inputPlatform === 'gitea' || inputPlatform === 'local' || inputPlatform === 'git') {
+        if (inputPlatform === 'local' || inputPlatform === 'git') {
+            return inputPlatform;
+        }
+        (0, git_platform_detector_1.createByName)(inputPlatform, { providers: (0, git_platform_detector_1.getBuiltInProviders)() });
+        if (inputPlatform === 'github' || inputPlatform === 'gitea') {
             return inputPlatform;
         }
         throw new Error(`Unsupported platform: ${inputPlatform}. Supported platforms: github, gitea, local, git`);
-    }
-    // Try to detect from environment variables
-    const giteaServerUrl = process.env.GITEA_SERVER_URL;
-    const githubServerUrl = process.env.GITHUB_SERVER_URL || process.env.GITHUB_API_URL;
-    // Check environment variables
-    if (giteaServerUrl) {
-        core.info(`ℹ️ Detected Gitea platform from GITEA_SERVER_URL`);
-        return 'gitea';
-    }
-    if (githubServerUrl) {
-        core.info(`ℹ️ Detected GitHub platform from GITHUB_SERVER_URL`);
-        return 'github';
     }
     // Check for local git repository (if no tokens available and repositoryPath is blank/./relative)
     const repoPath = repositoryPath || process.env.GITHUB_WORKSPACE || process.env.GITEA_WORKSPACE || process.cwd();
@@ -82,7 +75,18 @@ function detectPlatform(inputPlatform, repositoryPath) {
         core.info(`ℹ️ Detected local git repository (no tokens available, repository path is blank/./relative)`);
         return 'git';
     }
-    // Default to GitHub if nothing is detected
+    const detection = await (0, git_platform_detector_1.detectPlatform)({
+        providers: (0, git_platform_detector_1.getBuiltInProviders)(),
+        env: process.env
+    });
+    if (detection.providerId === 'gitea') {
+        core.info(`ℹ️ Detected Gitea platform from environment`);
+        return 'gitea';
+    }
+    if (detection.providerId === 'github') {
+        core.info(`ℹ️ Detected GitHub platform from environment`);
+        return 'github';
+    }
     core.info(`ℹ️ No platform detected from environment, defaulting to GitHub`);
     return 'github';
 }

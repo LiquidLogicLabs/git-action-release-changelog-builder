@@ -58,7 +58,7 @@ export async function run(): Promise<void> {
     const repositoryPath = process.env.GITHUB_WORKSPACE || process.env.GITEA_WORKSPACE || process.cwd()
 
     // Detect platform
-    const platform = detectPlatform(platformInput, repositoryPath)
+    const platform = await detectPlatform(platformInput, repositoryPath)
     const baseUrl = getApiBaseUrl(platform)
 
     // Get token
