@@ -36,9 +36,13 @@ coverage/
 
 # Act (local GitHub Actions testing)
 .act-event-*.json
-.act.*
-!.act.*.example
-!.act.*.sample
-# Note: .act.*.sample files are templates and safe to commit
-# .act.vars and .act.secrets are ignored and should contain actual values
+# Standardized repo-local act config is committed; ignore only local overrides.
+.act.env.local
+.act.vars.local
+.act.secrets.local
 
+# Local dev (act)
+.env.*
+.secrets
+.secrets.*
+.actrc.local

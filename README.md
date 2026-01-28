@@ -18,7 +18,7 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 
 ```yaml
 - name: Build Changelog
-  uses: LiquidLogicLabs/git-changelog-builder-action@v1
+  uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
   with:
     fromTag: v1.0.0
     toTag: v1.1.0
@@ -30,7 +30,7 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 
 ```yaml
 - name: Build Changelog
-  uses: LiquidLogicLabs/git-changelog-builder-action@v1
+  uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
   with:
     platform: gitea
     fromTag: v1.0.0
@@ -43,7 +43,7 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 
 ```yaml
 - name: Build Changelog
-  uses: LiquidLogicLabs/git-changelog-builder-action@v1
+  uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
   with:
     fromTag: v1.0.0
     toTag: v1.1.0
@@ -213,7 +213,7 @@ jobs:
 
       - name: Build Changelog
         id: changelog
-        uses: LiquidLogicLabs/git-changelog-builder-action@v1
+        uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
         with:
           fetchTagAnnotations: true
           prefixMessage: |
@@ -232,9 +232,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
-        uses: actions/create-release@v1
+        uses: LiquidLogicLabs/git-action-release@v1
         with:
+          tag: ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changelog }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Credits

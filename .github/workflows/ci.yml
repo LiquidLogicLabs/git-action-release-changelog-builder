@@ -5,15 +5,21 @@ on:
     branches: ['**']
     tags-ignore: ['**']  # Ignore tag pushes (handled by release workflow)
     paths-ignore:
+      - '**/*.md'
       - 'docs/**'  # Skip CI for documentation-only changes
       - '.act*'  # Skip CI for local act configuration changes (sample files are committed)
   pull_request:
     branches: ['**']
     paths-ignore:
+      - '**/*.md'
       - 'docs/**'  # Skip CI for documentation-only changes
       - '.act*'  # Skip CI for local act configuration changes (sample files are committed)
   workflow_call:  # Allow CI to be called by release workflow (not affected by paths-ignore)
   workflow_dispatch:  # Allow manual triggering (not affected by paths-ignore)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -60,5 +66,6 @@ jobs:
     # Always run - workflow trigger filters when it should run
     needs: lint  # Tests run after lint
     uses: ./.github/workflows/test.yml
+    secrets: inherit
     # test.yml runs: unit tests + integration tests (all tests except E2E)
 
