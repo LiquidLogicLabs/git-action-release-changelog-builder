@@ -14,6 +14,13 @@ import moment from 'moment'
 import * as path from 'path'
 import {Configuration} from './types'
 
+function resolveVerbose(): boolean {
+  const verboseInput = core.getBooleanInput('verbose')
+  const envStepDebug = (process.env.ACTIONS_STEP_DEBUG || '').toLowerCase()
+  const stepDebugEnabled = core.isDebug() || envStepDebug === 'true' || envStepDebug === '1'
+  return verboseInput || stepDebugEnabled
+}
+
 /**
  * Main entry point for the action
  * Exported for testing purposes
@@ -31,7 +38,7 @@ export async function run(): Promise<void> {
 
   try {
     // Get verbose input and create logger
-    const verbose = core.getBooleanInput('verbose')
+    const verbose = resolveVerbose()
     const logger = new Logger(verbose)
 
     core.setOutput('failed', 'false')
@@ -159,7 +166,7 @@ export async function run(): Promise<void> {
     core.setOutput('failed', 'true')
     
     // Create logger even in error case (may not have been created if error occurred early)
-    const verbose = core.getBooleanInput('verbose')
+    const verbose = resolveVerbose()
     const logger = new Logger(verbose)
     
     const failOnError = core.getInput('failOnError') === 'true'
