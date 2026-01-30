@@ -43602,6 +43602,12 @@ const token_1 = __nccwpck_require__(4606);
 const tags_1 = __nccwpck_require__(9506);
 const collector_1 = __nccwpck_require__(9072);
 const logger_1 = __nccwpck_require__(6999);
+function resolveVerbose() {
+    const verboseInput = core.getBooleanInput('verbose');
+    const envStepDebug = (process.env.ACTIONS_STEP_DEBUG || '').toLowerCase();
+    const stepDebugEnabled = core.isDebug() || envStepDebug === 'true' || envStepDebug === '1';
+    return verboseInput || stepDebugEnabled;
+}
 /**
  * Main entry point for the action
  * Exported for testing purposes
@@ -43617,7 +43623,7 @@ async function run() {
     };
     try {
         // Get verbose input and create logger
-        const verbose = core.getBooleanInput('verbose');
+        const verbose = resolveVerbose();
         const logger = new logger_1.Logger(verbose);
         core.setOutput('failed', 'false');
         // Read inputs
@@ -43699,7 +43705,7 @@ async function run() {
         const errorMessage = error instanceof Error ? error.message : String(error);
         core.setOutput('failed', 'true');
         // Create logger even in error case (may not have been created if error occurred early)
-        const verbose = core.getBooleanInput('verbose');
+        const verbose = resolveVerbose();
         const logger = new logger_1.Logger(verbose);
         const failOnError = core.getInput('failOnError') === 'true';
         // Graceful fallback: always emit a non-empty changelog output so downstream steps
