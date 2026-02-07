@@ -1,8 +1,9 @@
 import * as core from '@actions/core'
+import { Agent, setGlobalDispatcher } from 'undici'
 import {BaseProvider} from './providers/base'
 import {createProvider} from './providers/factory'
 import {detectPlatform, getApiBaseUrl} from './platform'
-import {resolveConfiguration} from './config'
+import { getInputs, resolveConfiguration, resolveVerbose, ParsedInputs } from './config'
 import {generateChangelog} from './changelog'
 import {detectOwnerRepo} from './context'
 import {detectToken} from './token'
@@ -14,52 +15,45 @@ import moment from 'moment'
 import * as path from 'path'
 import {Configuration} from './types'
 
-function resolveVerbose(): boolean {
-  const verboseInput = core.getBooleanInput('verbose')
-  const envStepDebug = (process.env.ACTIONS_STEP_DEBUG || '').toLowerCase()
-  const stepDebugEnabled = core.isDebug() || envStepDebug === 'true' || envStepDebug === '1'
-  return verboseInput || stepDebugEnabled
-}
-
 /**
  * Main entry point for the action
  * Exported for testing purposes
  */
 export async function run(): Promise<void> {
   // Keep these available for graceful error handling
+  let resolvedInputs: ParsedInputs | undefined
   let resolvedConfig: Configuration | undefined
   let resolvedPrefixMessage: string | undefined
   let resolvedPostfixMessage: string | undefined
 
-  const normalizeOptional = (value: string): string | undefined => {
-    const trimmed = value.trim()
-    return trimmed ? trimmed : undefined
-  }
-
   try {
-    // Get verbose input and create logger
-    const verbose = resolveVerbose()
-    const logger = new Logger(verbose)
+    const inputs = getInputs()
+    resolvedInputs = inputs
+
+    const logger = new Logger(inputs.verbose)
+    const skipCertificateCheck = inputs.skipCertificateCheck
+    if (skipCertificateCheck) {
+      logger.warning('TLS certificate verification is disabled. This is a security risk and should only be used with trusted endpoints.')
+      setGlobalDispatcher(new Agent({ connect: { rejectUnauthorized: false } }))
+    }
 
     core.setOutput('failed', 'false')
 
-    // Read inputs
-    const platformInput = normalizeOptional(core.getInput('platform') || '')
-    const tokenInput = normalizeOptional(core.getInput('token') || '')
-    const repoInput = normalizeOptional(core.getInput('repo') || '')
-    const fromTagInput = normalizeOptional(core.getInput('fromTag') || '')
-    const toTagInput = normalizeOptional(core.getInput('toTag') || '')
-    const modeInput = core.getInput('mode') || 'PR'
-    const configurationJson = core.getInput('configurationJson')
-    const configurationFile = core.getInput('configuration')
-    const ignorePreReleases = core.getInput('ignorePreReleases') === 'true'
-    const fetchTagAnnotations = core.getInput('fetchTagAnnotations') === 'true'
-    const prefixMessage = core.getInput('prefixMessage')
-    const postfixMessage = core.getInput('postfixMessage')
-    const includeOpen = core.getInput('includeOpen') === 'true'
-    const failOnError = core.getInput('failOnError') === 'true'
-    const maxTagsToFetchInput = core.getInput('maxTagsToFetch')
-    const maxTagsToFetch = maxTagsToFetchInput ? parseInt(maxTagsToFetchInput, 10) : 1000
+    const platformInput = inputs.platform
+    const tokenInput = inputs.token
+    const repoInput = inputs.repo
+    const fromTagInput = inputs.fromTag
+    const toTagInput = inputs.toTag
+    const modeInput = inputs.mode
+    const configurationJson = inputs.configurationJson
+    const configurationFile = inputs.configuration
+    const ignorePreReleases = inputs.ignorePreReleases
+    const fetchTagAnnotations = inputs.fetchTagAnnotations
+    const prefixMessage = inputs.prefixMessage
+    const postfixMessage = inputs.postfixMessage
+    const includeOpen = inputs.includeOpen
+    const failOnError = inputs.failOnError
+    const maxTagsToFetch = inputs.maxTagsToFetch
 
     // Get repository path
     const repositoryPath = process.env.GITHUB_WORKSPACE || process.env.GITEA_WORKSPACE || process.cwd()
@@ -113,7 +107,7 @@ export async function run(): Promise<void> {
       if (tagAnnotation) {
         logger.info(`ℹ️ Retrieved tag annotation for ${toTag.name}`)
         logger.debug(`Tag annotation: ${tagAnnotation.substring(0, 100)}...`)
-        core.setOutput('tag_annotation', tagAnnotation)
+        core.setOutput('tagAnnotation', tagAnnotation)
       }
     }
 
@@ -158,7 +152,7 @@ export async function run(): Promise<void> {
       .filter(pr => pr.number > 0)
       .map(pr => pr.number)
       .join(', ')
-    core.setOutput('pull_requests', prNumbers)
+    core.setOutput('pullRequests', prNumbers)
 
     logger.info('✅ Changelog generated successfully')
   } catch (error) {
@@ -166,15 +160,21 @@ export async function run(): Promise<void> {
     core.setOutput('failed', 'true')
     
     // Create logger even in error case (may not have been created if error occurred early)
-    const verbose = resolveVerbose()
+    const safeInputs = resolvedInputs ?? (() => {
+      try {
+        return getInputs()
+      } catch {
+        return undefined
+      }
+    })()
+    const verbose = safeInputs?.verbose ?? resolveVerbose()
     const logger = new Logger(verbose)
-    
-    const failOnError = core.getInput('failOnError') === 'true'
+    const failOnError = safeInputs?.failOnError ?? false
 
     // Graceful fallback: always emit a non-empty changelog output so downstream steps
     // (like release creation) don't end up with an empty body.
     try {
-      const cfg = resolvedConfig ?? resolveConfiguration(process.cwd(), core.getInput('configurationJson'), core.getInput('configuration'))
+      const cfg = resolvedConfig ?? resolveConfiguration(process.cwd(), safeInputs?.configurationJson, safeInputs?.configuration)
       const isNoTags = /no tags found in repository/i.test(errorMessage)
       const fallback = isNoTags
         ? `⚠️ ${errorMessage}\n\n${cfg.empty_template ?? '- no changes'}`
@@ -196,7 +196,7 @@ export async function run(): Promise<void> {
       core.setOutput('fromTag', '')
       core.setOutput('toTag', '')
       core.setOutput('contributors', '')
-      core.setOutput('pull_requests', '')
+      core.setOutput('pullRequests', '')
     } catch {
       // If even fallback generation fails, ensure at least changelog is set.
       core.setOutput('changelog', `⚠️ Changelog generation failed: ${errorMessage}`)

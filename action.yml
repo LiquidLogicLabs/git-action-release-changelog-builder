@@ -56,6 +56,10 @@ inputs:
     description: 'Enable verbose debug logging. Also enabled when ACTIONS_STEP_DEBUG=true.'
     required: false
     default: 'false'
+  skipCertificateCheck:
+    description: 'Skip TLS certificate verification for API calls (self-hosted instances).'
+    required: false
+    default: 'false'
   maxTagsToFetch:
     description: 'Maximum number of tags to fetch when searching for tags. If a specified tag is not found in the initial batch, more tags will be fetched up to this limit. Defaults to 1000.'
     required: false
@@ -65,9 +69,9 @@ outputs:
     description: The built release changelog built from the merged pull requests
   contributors:
     description: A comma separated list of contributors (usernames) who contributed to the release
-  pull_requests:
+  pullRequests:
     description: A comma separated list of PR numbers that were merged
-  tag_annotation:
+  tagAnnotation:
     description: The tag annotation message if fetchTagAnnotations was enabled
   owner:
     description: Specifies the owner of the repository processed

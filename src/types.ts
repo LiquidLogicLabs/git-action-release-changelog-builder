@@ -98,7 +98,7 @@ export interface Configuration {
  * Action input types
  */
 export interface ActionInputs {
-  platform?: 'github' | 'gitea'
+  platform?: 'github' | 'gitea' | 'local' | 'git'
   token?: string
   repo?: string
   fromTag?: string
@@ -113,6 +113,8 @@ export interface ActionInputs {
   includeOpen?: boolean
   failOnError?: boolean
   maxTagsToFetch?: number
+  skipCertificateCheck?: boolean
+  verbose?: boolean
 }
 
 /**

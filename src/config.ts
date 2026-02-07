@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as fs from 'fs'
 import * as path from 'path'
-import {Configuration, Category} from './types'
+import { ActionInputs, Configuration, Category } from './types'
 
 /**
  * Default configuration
@@ -32,6 +32,96 @@ export const DefaultConfiguration: Configuration = {
   ignore_labels: [],
   trim_values: true,
   defaultCategory: '## Other Changes'
+}
+
+export type ParsedInputs = ActionInputs & {
+  mode: 'PR' | 'COMMIT' | 'HYBRID'
+  ignorePreReleases: boolean
+  fetchTagAnnotations: boolean
+  includeOpen: boolean
+  failOnError: boolean
+  maxTagsToFetch: number
+  skipCertificateCheck: boolean
+  verbose: boolean
+}
+
+function normalizeOptional(value: string): string | undefined {
+  const trimmed = value.trim()
+  return trimmed ? trimmed : undefined
+}
+
+function parseMode(value: string): 'PR' | 'COMMIT' | 'HYBRID' {
+  const normalized = value.toUpperCase()
+  if (normalized === 'PR' || normalized === 'COMMIT' || normalized === 'HYBRID') {
+    return normalized
+  }
+  throw new Error(`Invalid mode: ${value}. Must be PR, COMMIT, or HYBRID.`)
+}
+
+function parsePlatform(value: string | undefined): ActionInputs['platform'] {
+  if (!value) {
+    return undefined
+  }
+
+  const normalized = value.toLowerCase()
+  if (normalized === 'github' || normalized === 'gitea' || normalized === 'local' || normalized === 'git') {
+    return normalized
+  }
+
+  throw new Error(`Invalid platform: ${value}. Must be github, gitea, local, or git.`)
+}
+
+export function resolveVerbose(): boolean {
+  const verboseInput = core.getBooleanInput('verbose')
+  const envStepDebug = (process.env.ACTIONS_STEP_DEBUG || '').toLowerCase()
+  const stepDebugEnabled = core.isDebug() || envStepDebug === 'true' || envStepDebug === '1'
+  return verboseInput || stepDebugEnabled
+}
+
+export function getInputs(): ParsedInputs {
+  const platform = parsePlatform(normalizeOptional(core.getInput('platform') || ''))
+  const token = normalizeOptional(core.getInput('token') || '')
+  const repo = normalizeOptional(core.getInput('repo') || '')
+  const fromTag = normalizeOptional(core.getInput('fromTag') || '')
+  const toTag = normalizeOptional(core.getInput('toTag') || '')
+  const mode = parseMode(core.getInput('mode') || 'PR')
+  const configurationJson = normalizeOptional(core.getInput('configurationJson') || '')
+  const configuration = normalizeOptional(core.getInput('configuration') || '')
+  const ignorePreReleases = core.getBooleanInput('ignorePreReleases')
+  const fetchTagAnnotations = core.getBooleanInput('fetchTagAnnotations')
+  const prefixMessage = normalizeOptional(core.getInput('prefixMessage') || '')
+  const postfixMessage = normalizeOptional(core.getInput('postfixMessage') || '')
+  const includeOpen = core.getBooleanInput('includeOpen')
+  const failOnError = core.getBooleanInput('failOnError')
+  const maxTagsToFetchRaw = normalizeOptional(core.getInput('maxTagsToFetch') || '')
+  const maxTagsToFetch = maxTagsToFetchRaw ? parseInt(maxTagsToFetchRaw, 10) : 1000
+
+  if (maxTagsToFetchRaw && Number.isNaN(maxTagsToFetch)) {
+    throw new Error(`Invalid maxTagsToFetch: ${maxTagsToFetchRaw}. Must be a number.`)
+  }
+
+  const skipCertificateCheck = core.getBooleanInput('skipCertificateCheck')
+  const verbose = resolveVerbose()
+
+  return {
+    platform,
+    token,
+    repo,
+    fromTag,
+    toTag,
+    mode,
+    configuration,
+    configurationJson,
+    ignorePreReleases,
+    fetchTagAnnotations,
+    prefixMessage,
+    postfixMessage,
+    includeOpen,
+    failOnError,
+    maxTagsToFetch,
+    skipCertificateCheck,
+    verbose
+  }
 }
 
 /**
