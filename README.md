@@ -97,6 +97,10 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 | `to-tag` | To tag name |
 | `failed` | Whether the action failed |
 
+## Permissions
+
+No special permissions are required for reading repository data. If the changelog is used in a step that creates a release, that job will need `contents: write` as required by the release action.
+
 ## Configuration
 
 ### Basic Configuration
@@ -150,7 +154,7 @@ You can also explicitly specify the platform using the `platform` input.
 
 ## Self-Hosted Gitea
 
-For self-hosted Gitea or GitHub Enterprise, the action auto-detects the base URL when provided by the runner (e.g., `GITHUB_SERVER_URL`/`GITHUB_API_URL` for GHES, `GITEA_SERVER_URL` for Gitea). If none are present, it falls back to the standard public endpoints (`https://api.github.com` for GitHub, `https://gitea.com` for Gitea). No `baseUrl` input is needed.
+For self-hosted Gitea or GitHub Enterprise, the action auto-detects the base URL when provided by the runner (e.g., `GITHUB_SERVER_URL`/`GITHUB_API_URL` for GHES, `GITEA_SERVER_URL` for Gitea). If none are present, it falls back to the standard public endpoints (`https://api.github.com` for GitHub, `https://gitea.com` for Gitea). No `base-url` input is needed.
 
 ## Tag Annotations
 
