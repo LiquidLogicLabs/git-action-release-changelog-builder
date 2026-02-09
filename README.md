@@ -20,8 +20,8 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 - name: Build Changelog
   uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
   with:
-    fromTag: v1.0.0
-    toTag: v1.1.0
+    from-tag: v1.0.0
+    to-tag: v1.1.0
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -33,8 +33,8 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
   uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
   with:
     platform: gitea
-    fromTag: v1.0.0
-    toTag: v1.1.0
+    from-tag: v1.0.0
+    to-tag: v1.1.0
   env:
     GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
 ```
@@ -45,14 +45,14 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 - name: Build Changelog
   uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
   with:
-    fromTag: v1.0.0
-    toTag: v1.1.0
-    fetchTagAnnotations: true
-    prefixMessage: |
+    from-tag: v1.0.0
+    to-tag: v1.1.0
+    fetch-tag-annotations: true
+    prefix-message: |
       # Release Notes
       
       This release includes the following changes:
-    postfixMessage: |
+    postfix-message: |
       ---
       For more information, visit [our documentation](https://example.com/docs)
   env:
@@ -66,21 +66,22 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 | `platform` | No | Auto-detected | Platform: `github`, `gitea`, `local`, or `git` |
 | `token` | No | Environment token | Authentication token |
 | `repo` | No | Current repo | Repository to use (owner/repo or URL). Defaults to current repo if omitted. |
-| `fromTag` | No* | Previous tag | Previous tag to compare from |
-| `toTag` | No* | Current tag | New tag to compare to |
+| `from-tag` | No* | Previous tag | Previous tag to compare from |
+| `to-tag` | No* | Current tag | New tag to compare to |
 | `mode` | No | `PR` | Mode: `PR`, `COMMIT`, or `HYBRID` |
 | `configuration` | No | Defaults | Path to configuration JSON file |
-| `configurationJson` | No | - | Configuration JSON string |
-| `ignorePreReleases` | No | `false` | Ignore pre-release tags when finding predecessor |
-| `fetchTagAnnotations` | No | `false` | Fetch tag annotation messages |
-| `prefixMessage` | No | - | Message to prepend to changelog |
-| `postfixMessage` | No | - | Message to append to changelog |
-| `includeOpen` | No | `false` | Include open pull requests |
-| `failOnError` | No | `false` | Fail the action on errors |
+| `configuration-json` | No | - | Configuration JSON string |
+| `ignore-pre-releases` | No | `false` | Ignore pre-release tags when finding predecessor |
+| `fetch-tag-annotations` | No | `false` | Fetch tag annotation messages |
+| `prefix-message` | No | - | Message to prepend to changelog |
+| `postfix-message` | No | - | Message to append to changelog |
+| `include-open` | No | `false` | Include open pull requests |
+| `fail-on-error` | No | `false` | Fail the action on errors |
 | `verbose` | No | `false` | Enable verbose debug logging |
-| `maxTagsToFetch` | No | `1000` | Maximum number of tags to fetch when searching for tags. If a specified tag is not found in the initial batch (200 tags), more tags will be fetched up to this limit |
+| `skip-certificate-check` | No | `false` | Skip TLS certificate verification for API calls (self-hosted instances) |
+| `max-tags-to-fetch` | No | `1000` | Maximum number of tags to fetch when searching for tags. If a specified tag is not found in the initial batch (200 tags), more tags will be fetched up to this limit |
 
-\* Either `fromTag`/`toTag` must be provided, or the action must run on a tag
+\* Either `from-tag`/`to-tag` must be provided, or the action must run on a tag
 
 ## Outputs
 
@@ -88,12 +89,12 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 |--------|-------------|
 | `changelog` | The generated changelog |
 | `contributors` | Comma-separated list of contributors |
-| `pull_requests` | Comma-separated list of PR numbers |
-| `tag_annotation` | Tag annotation message (if `fetchTagAnnotations` is enabled) |
+| `pull-requests` | Comma-separated list of PR numbers |
+| `tag-annotation` | Tag annotation message (if `fetch-tag-annotations` is enabled) |
 | `owner` | Repository owner |
 | `repo` | Repository name |
-| `fromTag` | From tag name |
-| `toTag` | To tag name |
+| `from-tag` | From tag name |
+| `to-tag` | To tag name |
 | `failed` | Whether the action failed |
 
 ## Configuration
@@ -153,14 +154,14 @@ For self-hosted Gitea or GitHub Enterprise, the action auto-detects the base URL
 
 ## Tag Annotations
 
-When `fetchTagAnnotations` is enabled, the action will fetch annotation messages from git tags:
+When `fetch-tag-annotations` is enabled, the action will fetch annotation messages from git tags:
 
 ```bash
 # Create an annotated tag
 git tag -a v1.0.0 -m "Release version 1.0.0 with major improvements"
 ```
 
-The annotation will be included in the changelog output and available in the `tag_annotation` output.
+The annotation will be included in the changelog output and available in the `tag-annotation` output.
 
 ## Prefix and Postfix Messages
 
@@ -168,11 +169,11 @@ You can add custom messages before or after the changelog:
 
 ```yaml
 with:
-  prefixMessage: |
+  prefix-message: |
     # Release Notes
     
     This release includes important updates:
-  postfixMessage: |
+  postfix-message: |
     ---
     **Note**: Please read the migration guide before upgrading.
 ```
@@ -215,11 +216,11 @@ jobs:
         id: changelog
         uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
         with:
-          fetchTagAnnotations: true
-          prefixMessage: |
+          fetch-tag-annotations: true
+          prefix-message: |
             # Release ${{ github.ref_name }}
             
-          configurationJson: |
+          configuration-json: |
             {
               "template": "#{{CHANGELOG}}",
               "pr_template": "- #{{TITLE}} (#{{NUMBER}})",

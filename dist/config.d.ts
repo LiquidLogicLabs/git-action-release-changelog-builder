@@ -13,6 +13,7 @@ export type ParsedInputs = ActionInputs & {
     skipCertificateCheck: boolean;
     verbose: boolean;
 };
+export declare function resolveDebugMode(): boolean;
 export declare function resolveVerbose(): boolean;
 export declare function getInputs(): ParsedInputs;
 /**

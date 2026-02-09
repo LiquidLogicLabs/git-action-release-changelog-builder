@@ -14,10 +14,10 @@ inputs:
   repo:
     description: 'Defines the repository to create the changelog for (owner/repo or URL). Defaults to the current repository if not provided.'
     required: false
-  fromTag:
+  from-tag:
     description: 'Defines the previous tag to compare against'
     required: false
-  toTag:
+  to-tag:
     description: 'Defines the newly tag created'
     required: false
   mode:
@@ -27,28 +27,28 @@ inputs:
   configuration:
     description: 'Defines the relative path to the configuration file.'
     required: false
-  configurationJson:
+  configuration-json:
     description: 'Defines the configuration json. If provided, will be preferred over `configuration`.'
     required: false
-  ignorePreReleases:
+  ignore-pre-releases:
     description: 'Defines if the action will only use full releases to compare against (Only used if fromTag is not defined).'
     required: false
     default: 'false'
-  fetchTagAnnotations:
+  fetch-tag-annotations:
     description: 'Defines if the action should fetch tag annotation messages'
     required: false
     default: 'false'
-  prefixMessage:
+  prefix-message:
     description: 'Optional message to prepend to the generated changelog'
     required: false
-  postfixMessage:
+  postfix-message:
     description: 'Optional message to append to the generated changelog'
     required: false
-  includeOpen:
+  include-open:
     description: 'Defines if the changelog should include open PRs'
     required: false
     default: 'false'
-  failOnError:
+  fail-on-error:
     description: 'Defines if the action should result in a build failure, if an error was discovered'
     required: false
     default: 'false'
@@ -56,11 +56,11 @@ inputs:
     description: 'Enable verbose debug logging. Also enabled when ACTIONS_STEP_DEBUG=true.'
     required: false
     default: 'false'
-  skipCertificateCheck:
+  skip-certificate-check:
     description: 'Skip TLS certificate verification for API calls (self-hosted instances).'
     required: false
     default: 'false'
-  maxTagsToFetch:
+  max-tags-to-fetch:
     description: 'Maximum number of tags to fetch when searching for tags. If a specified tag is not found in the initial batch, more tags will be fetched up to this limit. Defaults to 1000.'
     required: false
     default: '1000'
@@ -69,17 +69,17 @@ outputs:
     description: The built release changelog built from the merged pull requests
   contributors:
     description: A comma separated list of contributors (usernames) who contributed to the release
-  pullRequests:
+  pull-requests:
     description: A comma separated list of PR numbers that were merged
-  tagAnnotation:
+  tag-annotation:
     description: The tag annotation message if fetchTagAnnotations was enabled
   owner:
     description: Specifies the owner of the repository processed
   repo:
     description: Describes the repository name, which was processed
-  fromTag:
+  from-tag:
     description: Defines the `fromTag` which describes the lower bound to process pull requests for
-  toTag:
+  to-tag:
     description: Defines the `toTag` which describes the upper bound to process pull request for
   failed:
     description: Defines if there was an issue with the action run, and the changelog may not have been generated correctly. [true, false]

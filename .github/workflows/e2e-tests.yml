@@ -81,7 +81,7 @@ jobs:
           platform: github
           repo: ${{ matrix.scenario.repo_type == 'local' && github.repository || env.TEST_GITHUB_REPO }}
           mode: PR
-          fromTag: ${{ matrix.scenario.fromTag_provided && env.TEST_GITHUB_FROM_TAG || '' }}
-          toTag: ${{ matrix.scenario.toTag_provided && env.TEST_GITHUB_TO_TAG || '' }}
+          from-tag: ${{ matrix.scenario.fromTag_provided && env.TEST_GITHUB_FROM_TAG || '' }}
+          to-tag: ${{ matrix.scenario.toTag_provided && env.TEST_GITHUB_TO_TAG || '' }}
           token: ${{ secrets.TEST_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          fetchTagAnnotations: true
+          fetch-tag-annotations: true

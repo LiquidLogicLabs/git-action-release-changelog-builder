@@ -3,7 +3,7 @@ import { Agent, setGlobalDispatcher } from 'undici'
 import {BaseProvider} from './providers/base'
 import {createProvider} from './providers/factory'
 import {detectPlatform, getApiBaseUrl} from './platform'
-import { getInputs, resolveConfiguration, resolveVerbose, ParsedInputs } from './config'
+import { getInputs, resolveConfiguration, resolveVerbose, resolveDebugMode, ParsedInputs } from './config'
 import {generateChangelog} from './changelog'
 import {detectOwnerRepo} from './context'
 import {detectToken} from './token'
@@ -30,7 +30,8 @@ export async function run(): Promise<void> {
     const inputs = getInputs()
     resolvedInputs = inputs
 
-    const logger = new Logger(inputs.verbose)
+    const debugMode = resolveDebugMode()
+    const logger = new Logger(inputs.verbose, debugMode)
     const skipCertificateCheck = inputs.skipCertificateCheck
     if (skipCertificateCheck) {
       logger.warning('TLS certificate verification is disabled. This is a security risk and should only be used with trusted endpoints.')
@@ -107,7 +108,7 @@ export async function run(): Promise<void> {
       if (tagAnnotation) {
         logger.info(`ℹ️ Retrieved tag annotation for ${toTag.name}`)
         logger.debug(`Tag annotation: ${tagAnnotation.substring(0, 100)}...`)
-        core.setOutput('tagAnnotation', tagAnnotation)
+        core.setOutput('tag-annotation', tagAnnotation)
       }
     }
 
@@ -140,8 +141,8 @@ export async function run(): Promise<void> {
     core.setOutput('changelog', changelog)
     core.setOutput('owner', owner)
     core.setOutput('repo', repo)
-    core.setOutput('fromTag', fromTag.name)
-    core.setOutput('toTag', toTag.name)
+    core.setOutput('from-tag', fromTag.name)
+    core.setOutput('to-tag', toTag.name)
 
     // Contributors
     const contributors = Array.from(new Set(pullRequests.map(pr => pr.author))).join(', ')
@@ -152,7 +153,7 @@ export async function run(): Promise<void> {
       .filter(pr => pr.number > 0)
       .map(pr => pr.number)
       .join(', ')
-    core.setOutput('pullRequests', prNumbers)
+    core.setOutput('pull-requests', prNumbers)
 
     logger.info('✅ Changelog generated successfully')
   } catch (error) {
@@ -168,7 +169,8 @@ export async function run(): Promise<void> {
       }
     })()
     const verbose = safeInputs?.verbose ?? resolveVerbose()
-    const logger = new Logger(verbose)
+    const safeDebugMode = resolveDebugMode()
+    const logger = new Logger(verbose, safeDebugMode)
     const failOnError = safeInputs?.failOnError ?? false
 
     // Graceful fallback: always emit a non-empty changelog output so downstream steps
@@ -193,10 +195,10 @@ export async function run(): Promise<void> {
       // These may be unknown in error cases; emit empty values instead of omitting.
       core.setOutput('owner', '')
       core.setOutput('repo', '')
-      core.setOutput('fromTag', '')
-      core.setOutput('toTag', '')
+      core.setOutput('from-tag', '')
+      core.setOutput('to-tag', '')
       core.setOutput('contributors', '')
-      core.setOutput('pullRequests', '')
+      core.setOutput('pull-requests', '')
     } catch {
       // If even fallback generation fails, ensure at least changelog is set.
       core.setOutput('changelog', `⚠️ Changelog generation failed: ${errorMessage}`)

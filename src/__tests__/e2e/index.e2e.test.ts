@@ -74,8 +74,8 @@ describe('E2E Tests', () => {
         if (name === 'owner') return owner
         if (name === 'repo') return repo
         if (name === 'mode') return 'PR'
-        if (name === 'fromTag') return 'v0.1.0'
-        if (name === 'toTag') return 'v0.1.1'
+        if (name === 'from-tag') return 'v0.1.0'
+        if (name === 'to-tag') return 'v0.1.1'
         if (name === 'verbose') return 'false'
         return ''
       })
@@ -100,8 +100,8 @@ describe('E2E Tests', () => {
         if (name === 'owner') return owner
         if (name === 'repo') return repo
         if (name === 'mode') return 'PR'
-        if (name === 'fromTag') return 'v999.999.999' // Non-existent tag
-        if (name === 'toTag') return 'v999.999.999' // Non-existent tag
+        if (name === 'from-tag') return 'v999.999.999' // Non-existent tag
+        if (name === 'to-tag') return 'v999.999.999' // Non-existent tag
         if (name === 'verbose') return 'false'
         return ''
       })
@@ -135,8 +135,8 @@ describe('E2E Tests', () => {
         if (name === 'platform') return 'gitea'
         if (name === 'repo') return repo
         if (name === 'mode') return 'PR'
-        if (name === 'fromTag') return 'v1.0.0'
-        if (name === 'toTag') return 'v1.1.0'
+        if (name === 'from-tag') return 'v1.0.0'
+        if (name === 'to-tag') return 'v1.1.0'
         if (name === 'verbose') return 'false'
         return ''
       })

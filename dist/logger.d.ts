@@ -4,7 +4,8 @@
  */
 export declare class Logger {
     readonly verbose: boolean;
-    constructor(verbose?: boolean);
+    readonly debugMode: boolean;
+    constructor(verbose?: boolean, debugMode?: boolean);
     /**
      * Log an info message
      */
@@ -18,8 +19,14 @@ export declare class Logger {
      */
     error(message: string): void;
     /**
-     * Log a debug message - uses core.info() when verbose is true so it always shows
-     * Falls back to core.debug() when verbose is false (for when ACTIONS_STEP_DEBUG is set at workflow level)
+     * Log a verbose info message - only shown when verbose is true
+     */
+    verboseInfo(message: string): void;
+    /**
+     * Log a debug message - uses core.info() with [DEBUG] prefix when debugMode is true
+     * Falls back to core.debug() when debugMode is false (for when ACTIONS_STEP_DEBUG is set at workflow level)
      */
     debug(message: string): void;
+    isVerbose(): boolean;
+    isDebug(): boolean;
 }

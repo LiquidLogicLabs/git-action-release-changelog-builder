@@ -92667,6 +92667,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DefaultConfiguration = void 0;
+exports.resolveDebugMode = resolveDebugMode;
 exports.resolveVerbose = resolveVerbose;
 exports.getInputs = getInputs;
 exports.parseConfigurationJson = parseConfigurationJson;
@@ -92726,33 +92727,41 @@ function parsePlatform(value) {
     }
     throw new Error(`Invalid platform: ${value}. Must be github, gitea, local, or git.`);
 }
+function parseBoolean(val) {
+    return val?.toLowerCase() === 'true' || val === '1';
+}
+function resolveDebugMode() {
+    return ((typeof core.isDebug === 'function' && core.isDebug()) ||
+        parseBoolean(process.env.ACTIONS_STEP_DEBUG) ||
+        parseBoolean(process.env.ACTIONS_RUNNER_DEBUG) ||
+        parseBoolean(process.env.RUNNER_DEBUG));
+}
 function resolveVerbose() {
     const verboseInput = core.getBooleanInput('verbose');
-    const envStepDebug = (process.env.ACTIONS_STEP_DEBUG || '').toLowerCase();
-    const stepDebugEnabled = core.isDebug() || envStepDebug === 'true' || envStepDebug === '1';
-    return verboseInput || stepDebugEnabled;
+    const debugMode = resolveDebugMode();
+    return verboseInput || debugMode;
 }
 function getInputs() {
     const platform = parsePlatform(normalizeOptional(core.getInput('platform') || ''));
     const token = normalizeOptional(core.getInput('token') || '');
     const repo = normalizeOptional(core.getInput('repo') || '');
-    const fromTag = normalizeOptional(core.getInput('fromTag') || '');
-    const toTag = normalizeOptional(core.getInput('toTag') || '');
+    const fromTag = normalizeOptional(core.getInput('from-tag') || '');
+    const toTag = normalizeOptional(core.getInput('to-tag') || '');
     const mode = parseMode(core.getInput('mode') || 'PR');
-    const configurationJson = normalizeOptional(core.getInput('configurationJson') || '');
+    const configurationJson = normalizeOptional(core.getInput('configuration-json') || '');
     const configuration = normalizeOptional(core.getInput('configuration') || '');
-    const ignorePreReleases = core.getBooleanInput('ignorePreReleases');
-    const fetchTagAnnotations = core.getBooleanInput('fetchTagAnnotations');
-    const prefixMessage = normalizeOptional(core.getInput('prefixMessage') || '');
-    const postfixMessage = normalizeOptional(core.getInput('postfixMessage') || '');
-    const includeOpen = core.getBooleanInput('includeOpen');
-    const failOnError = core.getBooleanInput('failOnError');
-    const maxTagsToFetchRaw = normalizeOptional(core.getInput('maxTagsToFetch') || '');
+    const ignorePreReleases = core.getBooleanInput('ignore-pre-releases');
+    const fetchTagAnnotations = core.getBooleanInput('fetch-tag-annotations');
+    const prefixMessage = normalizeOptional(core.getInput('prefix-message') || '');
+    const postfixMessage = normalizeOptional(core.getInput('postfix-message') || '');
+    const includeOpen = core.getBooleanInput('include-open');
+    const failOnError = core.getBooleanInput('fail-on-error');
+    const maxTagsToFetchRaw = normalizeOptional(core.getInput('max-tags-to-fetch') || '');
     const maxTagsToFetch = maxTagsToFetchRaw ? parseInt(maxTagsToFetchRaw, 10) : 1000;
     if (maxTagsToFetchRaw && Number.isNaN(maxTagsToFetch)) {
         throw new Error(`Invalid maxTagsToFetch: ${maxTagsToFetchRaw}. Must be a number.`);
     }
-    const skipCertificateCheck = core.getBooleanInput('skipCertificateCheck');
+    const skipCertificateCheck = core.getBooleanInput('skip-certificate-check');
     const verbose = resolveVerbose();
     return {
         platform,
@@ -93258,7 +93267,8 @@ async function run() {
     try {
         const inputs = (0, config_1.getInputs)();
         resolvedInputs = inputs;
-        const logger = new logger_1.Logger(inputs.verbose);
+        const debugMode = (0, config_1.resolveDebugMode)();
+        const logger = new logger_1.Logger(inputs.verbose, debugMode);
         const skipCertificateCheck = inputs.skipCertificateCheck;
         if (skipCertificateCheck) {
             logger.warning('TLS certificate verification is disabled. This is a security risk and should only be used with trusted endpoints.');
@@ -93312,7 +93322,7 @@ async function run() {
             if (tagAnnotation) {
                 logger.info(`ℹ️ Retrieved tag annotation for ${toTag.name}`);
                 logger.debug(`Tag annotation: ${tagAnnotation.substring(0, 100)}...`);
-                core.setOutput('tagAnnotation', tagAnnotation);
+                core.setOutput('tag-annotation', tagAnnotation);
             }
         }
         // Collect pull requests based on mode
@@ -93325,8 +93335,8 @@ async function run() {
         core.setOutput('changelog', changelog);
         core.setOutput('owner', owner);
         core.setOutput('repo', repo);
-        core.setOutput('fromTag', fromTag.name);
-        core.setOutput('toTag', toTag.name);
+        core.setOutput('from-tag', fromTag.name);
+        core.setOutput('to-tag', toTag.name);
         // Contributors
         const contributors = Array.from(new Set(pullRequests.map(pr => pr.author))).join(', ');
         core.setOutput('contributors', contributors);
@@ -93335,7 +93345,7 @@ async function run() {
             .filter(pr => pr.number > 0)
             .map(pr => pr.number)
             .join(', ');
-        core.setOutput('pullRequests', prNumbers);
+        core.setOutput('pull-requests', prNumbers);
         logger.info('✅ Changelog generated successfully');
     }
     catch (error) {
@@ -93351,7 +93361,8 @@ async function run() {
             }
         })();
         const verbose = safeInputs?.verbose ?? (0, config_1.resolveVerbose)();
-        const logger = new logger_1.Logger(verbose);
+        const safeDebugMode = (0, config_1.resolveDebugMode)();
+        const logger = new logger_1.Logger(verbose, safeDebugMode);
         const failOnError = safeInputs?.failOnError ?? false;
         // Graceful fallback: always emit a non-empty changelog output so downstream steps
         // (like release creation) don't end up with an empty body.
@@ -93367,10 +93378,10 @@ async function run() {
             // These may be unknown in error cases; emit empty values instead of omitting.
             core.setOutput('owner', '');
             core.setOutput('repo', '');
-            core.setOutput('fromTag', '');
-            core.setOutput('toTag', '');
+            core.setOutput('from-tag', '');
+            core.setOutput('to-tag', '');
             core.setOutput('contributors', '');
-            core.setOutput('pullRequests', '');
+            core.setOutput('pull-requests', '');
         }
         catch {
             // If even fallback generation fails, ensure at least changelog is set.
@@ -93437,8 +93448,10 @@ const core = __importStar(__nccwpck_require__(7484));
  */
 class Logger {
     verbose;
-    constructor(verbose = false) {
-        this.verbose = verbose;
+    debugMode;
+    constructor(verbose = false, debugMode = false) {
+        this.verbose = verbose || debugMode;
+        this.debugMode = debugMode;
     }
     /**
      * Log an info message
@@ -93459,16 +93472,30 @@ class Logger {
         core.error(message);
     }
     /**
-     * Log a debug message - uses core.info() when verbose is true so it always shows
-     * Falls back to core.debug() when verbose is false (for when ACTIONS_STEP_DEBUG is set at workflow level)
+     * Log a verbose info message - only shown when verbose is true
+     */
+    verboseInfo(message) {
+        if (this.verbose) {
+            core.info(message);
+        }
+    }
+    /**
+     * Log a debug message - uses core.info() with [DEBUG] prefix when debugMode is true
+     * Falls back to core.debug() when debugMode is false (for when ACTIONS_STEP_DEBUG is set at workflow level)
      */
     debug(message) {
-        if (this.verbose) {
+        if (this.debugMode) {
             core.info(`[DEBUG] ${message}`);
         }
         else {
             core.debug(message);
         }
+    }
+    isVerbose() {
+        return this.verbose;
+    }
+    isDebug() {
+        return this.debugMode;
     }
 }
 exports.Logger = Logger;

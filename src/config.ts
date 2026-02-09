@@ -71,36 +71,48 @@ function parsePlatform(value: string | undefined): ActionInputs['platform'] {
   throw new Error(`Invalid platform: ${value}. Must be github, gitea, local, or git.`)
 }
 
+function parseBoolean(val?: string): boolean {
+  return val?.toLowerCase() === 'true' || val === '1'
+}
+
+export function resolveDebugMode(): boolean {
+  return (
+    (typeof core.isDebug === 'function' && core.isDebug()) ||
+    parseBoolean(process.env.ACTIONS_STEP_DEBUG) ||
+    parseBoolean(process.env.ACTIONS_RUNNER_DEBUG) ||
+    parseBoolean(process.env.RUNNER_DEBUG)
+  )
+}
+
 export function resolveVerbose(): boolean {
   const verboseInput = core.getBooleanInput('verbose')
-  const envStepDebug = (process.env.ACTIONS_STEP_DEBUG || '').toLowerCase()
-  const stepDebugEnabled = core.isDebug() || envStepDebug === 'true' || envStepDebug === '1'
-  return verboseInput || stepDebugEnabled
+  const debugMode = resolveDebugMode()
+  return verboseInput || debugMode
 }
 
 export function getInputs(): ParsedInputs {
   const platform = parsePlatform(normalizeOptional(core.getInput('platform') || ''))
   const token = normalizeOptional(core.getInput('token') || '')
   const repo = normalizeOptional(core.getInput('repo') || '')
-  const fromTag = normalizeOptional(core.getInput('fromTag') || '')
-  const toTag = normalizeOptional(core.getInput('toTag') || '')
+  const fromTag = normalizeOptional(core.getInput('from-tag') || '')
+  const toTag = normalizeOptional(core.getInput('to-tag') || '')
   const mode = parseMode(core.getInput('mode') || 'PR')
-  const configurationJson = normalizeOptional(core.getInput('configurationJson') || '')
+  const configurationJson = normalizeOptional(core.getInput('configuration-json') || '')
   const configuration = normalizeOptional(core.getInput('configuration') || '')
-  const ignorePreReleases = core.getBooleanInput('ignorePreReleases')
-  const fetchTagAnnotations = core.getBooleanInput('fetchTagAnnotations')
-  const prefixMessage = normalizeOptional(core.getInput('prefixMessage') || '')
-  const postfixMessage = normalizeOptional(core.getInput('postfixMessage') || '')
-  const includeOpen = core.getBooleanInput('includeOpen')
-  const failOnError = core.getBooleanInput('failOnError')
-  const maxTagsToFetchRaw = normalizeOptional(core.getInput('maxTagsToFetch') || '')
+  const ignorePreReleases = core.getBooleanInput('ignore-pre-releases')
+  const fetchTagAnnotations = core.getBooleanInput('fetch-tag-annotations')
+  const prefixMessage = normalizeOptional(core.getInput('prefix-message') || '')
+  const postfixMessage = normalizeOptional(core.getInput('postfix-message') || '')
+  const includeOpen = core.getBooleanInput('include-open')
+  const failOnError = core.getBooleanInput('fail-on-error')
+  const maxTagsToFetchRaw = normalizeOptional(core.getInput('max-tags-to-fetch') || '')
   const maxTagsToFetch = maxTagsToFetchRaw ? parseInt(maxTagsToFetchRaw, 10) : 1000
 
   if (maxTagsToFetchRaw && Number.isNaN(maxTagsToFetch)) {
     throw new Error(`Invalid maxTagsToFetch: ${maxTagsToFetchRaw}. Must be a number.`)
   }
 
-  const skipCertificateCheck = core.getBooleanInput('skipCertificateCheck')
+  const skipCertificateCheck = core.getBooleanInput('skip-certificate-check')
   const verbose = resolveVerbose()
 
   return {
