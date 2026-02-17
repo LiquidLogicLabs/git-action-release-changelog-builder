@@ -18,7 +18,7 @@ on:
   workflow_dispatch:  # Allow manual triggering (not affected by paths-ignore)
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow || 'CI' }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref || github.sha }}
   cancel-in-progress: true
 
 permissions:

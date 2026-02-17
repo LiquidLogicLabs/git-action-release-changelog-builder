@@ -49,7 +49,7 @@ E2E tests run the **committed** `dist/` via the real workflow (no build step bef
 
 In `.act.vars` you can set:
 
-- `TEST_GITHUB_REPO` — e.g. `owner/repo` for remote-repo scenarios
+- `TEST_GITHUB_REPO` — `owner/repo` for remote-repo scenarios (default: `LiquidLogicLabs/git-action-release-tests`)
 - `TEST_GITHUB_FROM_TAG` — from-tag when testing with explicit tags
 - `TEST_GITHUB_TO_TAG` — to-tag when testing with explicit tags
 

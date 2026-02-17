@@ -56,13 +56,14 @@ describe('E2E Tests', () => {
   })
 
   describe('GitHub E2E Tests', () => {
-    const testRepo = process.env.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-changelog-builder'
+    const testRepo = process.env.TEST_GITHUB_REPO || 'LiquidLogicLabs/git-action-release-tests'
     const githubToken = process.env.GITHUB_TOKEN || process.env.TEST_GITHUB_TOKEN
 
-    if (!githubToken) {
-      it.skip('skipped - TEST_GITHUB_TOKEN or GITHUB_TOKEN not set', () => {})
-      return
-    }
+    beforeAll(() => {
+      if (!githubToken) {
+        throw new Error('GITHUB_TOKEN or TEST_GITHUB_TOKEN required for e2e')
+      }
+    })
 
     it('should generate changelog from GitHub repository', async () => {
       const [owner, repo] = testRepo.split('/')
@@ -119,10 +120,11 @@ describe('E2E Tests', () => {
     const giteaToken = process.env.GITEA_TOKEN || process.env.TEST_GITEA_TOKEN
     const giteaUrl = process.env.TEST_GITEA_URL || ''
 
-    if (!testRepo || !giteaToken || !giteaUrl) {
-      it.skip('skipped - TEST_GITEA_REPO, TEST_GITEA_TOKEN, or TEST_GITEA_URL not set', () => {})
-      return
-    }
+    beforeAll(() => {
+      if (!testRepo || !giteaToken || !giteaUrl) {
+        throw new Error('TEST_GITEA_REPO, TEST_GITEA_TOKEN, and TEST_GITEA_URL required for e2e')
+      }
+    })
 
     it('should generate changelog from Gitea repository', async () => {
       const [owner, repo] = testRepo.split('/')
