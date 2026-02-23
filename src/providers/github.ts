@@ -352,6 +352,16 @@ export class GithubProvider extends BaseProvider {
     return commits
   }
 
+  async getLatestRelease(owner: string, repo: string): Promise<string | null> {
+    try {
+      const response = await this.octokit.repos.getLatestRelease({owner, repo})
+      return response.data.tag_name
+    } catch {
+      // 404 = no releases published yet
+      return null
+    }
+  }
+
   private mapPullRequest(
     pr: PullData | PullRequestsListData[0],
     status: 'open' | 'merged' = 'open'

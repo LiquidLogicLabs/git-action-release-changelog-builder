@@ -15,6 +15,7 @@ export declare class GithubProvider extends BaseProvider {
     getBetweenDates(owner: string, repo: string, fromDate: moment.Moment, toDate: moment.Moment, maxPullRequests: number): Promise<PullRequestInfo[]>;
     getOpen(owner: string, repo: string, maxPullRequests: number): Promise<PullRequestInfo[]>;
     getCommits(owner: string, repo: string, base: string, head: string): Promise<CommitInfo[]>;
+    getLatestRelease(owner: string, repo: string): Promise<string | null>;
     private mapPullRequest;
 }
 //# sourceMappingURL=github.d.ts.map

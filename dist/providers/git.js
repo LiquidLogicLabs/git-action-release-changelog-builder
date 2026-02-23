@@ -165,6 +165,10 @@ class GitProvider extends base_1.BaseProvider {
         };
     }
     /* eslint-disable @typescript-eslint/no-unused-vars */
+    async getLatestRelease(_owner, _repo) {
+        // Local git repositories have no release concept
+        return null;
+    }
     async getForCommitHash(_owner, _repo, _commitSha, _maxPullRequests) {
         throw new Error('PR mode is not supported for local git repositories. Use COMMIT mode instead.');
     }

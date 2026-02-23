@@ -299,6 +299,16 @@ class GithubProvider extends base_1.BaseProvider {
         }
         return commits;
     }
+    async getLatestRelease(owner, repo) {
+        try {
+            const response = await this.octokit.repos.getLatestRelease({ owner, repo });
+            return response.data.tag_name;
+        }
+        catch {
+            // 404 = no releases published yet
+            return null;
+        }
+    }
     mapPullRequest(pr, status = 'open') {
         return {
             number: pr.number,

@@ -93854,6 +93854,10 @@ class GitProvider extends base_1.BaseProvider {
         };
     }
     /* eslint-disable @typescript-eslint/no-unused-vars */
+    async getLatestRelease(_owner, _repo) {
+        // Local git repositories have no release concept
+        return null;
+    }
     async getForCommitHash(_owner, _repo, _commitSha, _maxPullRequests) {
         throw new Error('PR mode is not supported for local git repositories. Use COMMIT mode instead.');
     }
@@ -94219,6 +94223,19 @@ class GiteaProvider extends base_1.BaseProvider {
         }
         return commits;
     }
+    async getLatestRelease(owner, repo) {
+        try {
+            const response = await this.api.repos.repoGetLatestRelease(owner, repo);
+            if (response.error !== null || !response.data?.tag_name) {
+                return null;
+            }
+            return response.data.tag_name;
+        }
+        catch {
+            // 404 = no releases published yet
+            return null;
+        }
+    }
     mapPullRequest(pr, status = 'open') {
         return {
             number: pr.number || 0,
@@ -94552,6 +94569,16 @@ class GithubProvider extends base_1.BaseProvider {
         }
         return commits;
     }
+    async getLatestRelease(owner, repo) {
+        try {
+            const response = await this.octokit.repos.getLatestRelease({ owner, repo });
+            return response.data.tag_name;
+        }
+        catch {
+            // 404 = no releases published yet
+            return null;
+        }
+    }
     mapPullRequest(pr, status = 'open') {
         return {
             number: pr.number,
@@ -94663,24 +94690,17 @@ async function resolveTags(provider, owner, repo, repositoryPath, fromTagInput, 
         }
         return foundTag;
     };
-    // Get fromTag if provided
-    if (fromTagInput) {
-        const foundTag = await findTag(fromTagInput);
-        if (!foundTag) {
-            throw new Error(`Tag '${fromTagInput}' not found in repository. ` +
-                `Searched ${allTags.length} tag(s). ` +
-                `If this is an old tag, try increasing maxTagsToFetch (current: ${maxTagsToFetch}).`);
-        }
-        fromTag = foundTag;
-        fromTag = await provider.fillTagInformation(repositoryPath, owner, repo, fromTag);
-        logger.info(`✓ Using provided fromTag: ${fromTag.name}`);
-    }
-    // Get toTag if provided
-    if (toTagInput) {
-        const foundTag = await findTag(toTagInput);
+    // Normalize @current sentinel for toTag → run the auto-detect path (existing behaviour,
+    // just made explicit and documentable)
+    const normalizedToTagInput = toTagInput === '@current' ? undefined : toTagInput;
+    // ── Resolve toTag ─────────────────────────────────────────────────────────
+    // toTag must be resolved before fromTag so that offset / @latest-release can
+    // reference its position in the sorted tag list.
+    if (normalizedToTagInput) {
+        const foundTag = await findTag(normalizedToTagInput);
         if (!foundTag) {
             // Graceful fallback: if user provided a toTag but we can't find it, fall back to auto-detection.
-            logger.warning(`⚠️ toTag '${toTagInput}' not found in repository. Falling back to latest tag. ` +
+            logger.warning(`⚠️ toTag '${normalizedToTagInput}' not found in repository. Falling back to latest tag. ` +
                 `Searched ${allTags.length} tag(s).`);
         }
         else {
@@ -94689,9 +94709,9 @@ async function resolveTags(provider, owner, repo, repositoryPath, fromTagInput, 
             logger.info(`✓ Using provided toTag: ${toTag.name}`);
         }
     }
-    // Auto-detect toTag if not provided
+    // Auto-detect toTag if not provided / not found / @current
     if (!toTag) {
-        // Try to get from context first (for backwards compatibility with tag push events)
+        // Try to get from context first (tag push events — @current and undefined both land here)
         let ref;
         if (platform === 'gitea') {
             ref = process.env.GITEA_REF;
@@ -94721,7 +94741,70 @@ async function resolveTags(provider, owner, repo, repositoryPath, fromTagInput, 
             logger.info(`✓ Auto-detected toTag (latest): ${toTag.name}`);
         }
     }
-    // Auto-detect fromTag if not provided (find the tag before toTag)
+    // ── Resolve fromTag ────────────────────────────────────────────────────────
+    // toTag is now guaranteed to be resolved.
+    if (fromTagInput) {
+        // --- Offset pattern: "-N" (e.g. "-1", "-2") ---
+        if (/^-[1-9]\d*$/.test(fromTagInput)) {
+            const n = Math.abs(parseInt(fromTagInput, 10));
+            let toTagIndex = allTags.findIndex((t) => t.name === toTag.name);
+            let resolvedIndex = toTagIndex + n;
+            // Lazy re-fetch if the offset may be beyond the initial batch
+            if (resolvedIndex >= allTags.length && allTags.length < maxTagsToFetch) {
+                logger.debug(`Offset ${fromTagInput} may exceed initial tag batch, fetching more tags...`);
+                allTags = await provider.getTags(owner, repo, maxTagsToFetch);
+                logger.debug(`Fetched ${allTags.length} total tags`);
+                toTagIndex = allTags.findIndex((t) => t.name === toTag.name);
+                resolvedIndex = toTagIndex + n;
+            }
+            if (resolvedIndex < 0 || resolvedIndex >= allTags.length) {
+                const available = Math.max(0, allTags.length - toTagIndex - 1);
+                throw new Error(`Offset ${fromTagInput} is out of range: only ${available} tag(s) exist before '${toTag.name}'. ` +
+                    `Searched ${allTags.length} tag(s).`);
+            }
+            fromTag = allTags[resolvedIndex];
+            fromTag = await provider.fillTagInformation(repositoryPath, owner, repo, fromTag);
+            logger.info(`✓ Resolved fromTag by offset ${fromTagInput}: ${fromTag.name}`);
+            // --- Latest release sentinel: "@latest-release" ---
+        }
+        else if (fromTagInput === '@latest-release') {
+            const latestReleaseTag = await provider.getLatestRelease(owner, repo);
+            if (!latestReleaseTag) {
+                logger.warning(`⚠️ @latest-release: no release found (platform may not support releases or no releases exist). ` +
+                    `Falling back to previous tag.`);
+            }
+            else if (latestReleaseTag === toTag.name) {
+                logger.warning(`⚠️ @latest-release resolved to '${latestReleaseTag}' which is the same as toTag '${toTag.name}'. ` +
+                    `Falling back to previous tag.`);
+            }
+            else {
+                const foundTag = await findTag(latestReleaseTag);
+                if (!foundTag) {
+                    logger.warning(`⚠️ @latest-release resolved to '${latestReleaseTag}' but that tag was not found in the repository. ` +
+                        `Falling back to previous tag.`);
+                }
+                else {
+                    fromTag = foundTag;
+                    fromTag = await provider.fillTagInformation(repositoryPath, owner, repo, fromTag);
+                    logger.info(`✓ Resolved fromTag via @latest-release: ${fromTag.name}`);
+                }
+            }
+            // fromTag remains null on any fallback path → auto-detect below runs
+            // --- Explicit tag name ---
+        }
+        else {
+            const foundTag = await findTag(fromTagInput);
+            if (!foundTag) {
+                throw new Error(`Tag '${fromTagInput}' not found in repository. ` +
+                    `Searched ${allTags.length} tag(s). ` +
+                    `If this is an old tag, try increasing maxTagsToFetch (current: ${maxTagsToFetch}).`);
+            }
+            fromTag = foundTag;
+            fromTag = await provider.fillTagInformation(repositoryPath, owner, repo, fromTag);
+            logger.info(`✓ Using provided fromTag: ${fromTag.name}`);
+        }
+    }
+    // Auto-detect fromTag if not yet resolved (find the tag immediately before toTag)
     if (!fromTag) {
         const toTagIndex = allTags.findIndex((t) => t.name === toTag.name);
         if (toTagIndex >= 0 && toTagIndex < allTags.length - 1) {

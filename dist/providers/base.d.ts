@@ -54,5 +54,11 @@ export declare abstract class BaseProvider {
      * Get commits between two refs
      */
     abstract getCommits(owner: string, repo: string, base: string, head: string): Promise<CommitInfo[]>;
+    /**
+     * Get the tag name associated with the most recent published release.
+     * Returns null if the platform does not support releases, if no releases
+     * exist, or if the release cannot be determined.
+     */
+    abstract getLatestRelease(owner: string, repo: string): Promise<string | null>;
 }
 //# sourceMappingURL=base.d.ts.map

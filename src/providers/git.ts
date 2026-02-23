@@ -171,6 +171,11 @@ export class GitProvider extends BaseProvider {
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
+  async getLatestRelease(_owner: string, _repo: string): Promise<string | null> {
+    // Local git repositories have no release concept
+    return null
+  }
+
   async getForCommitHash(
     _owner: string,
     _repo: string,

@@ -91,7 +91,7 @@ describe('E2E Tests', () => {
       )
     }, 30000)
 
-    it('should handle missing tags gracefully', async () => {
+    it('should fail when from-tag does not exist', async () => {
       const [owner, repo] = testRepo.split('/')
       process.env.GITHUB_REPOSITORY = testRepo
       process.env.GITHUB_TOKEN = githubToken
@@ -101,17 +101,90 @@ describe('E2E Tests', () => {
         if (name === 'owner') return owner
         if (name === 'repo') return repo
         if (name === 'mode') return 'PR'
-        if (name === 'from-tag') return 'v999.999.999' // Non-existent tag
-        if (name === 'to-tag') return 'v999.999.999' // Non-existent tag
+        if (name === 'from-tag') return 'v999.999.999' // Non-existent from-tag → should throw
+        if (name === 'to-tag') return 'v0.1.1'
         if (name === 'verbose') return 'false'
         return ''
       })
 
       await run()
 
-      // Should complete without error (may have empty changelog)
+      // An explicit from-tag that doesn't exist is a hard error
+      expect(mockSetFailed).toHaveBeenCalled()
+    }, 30000)
+
+    it('should resolve to-tag: @current and produce a changelog', async () => {
+      const [owner, repo] = testRepo.split('/')
+      process.env.GITHUB_REPOSITORY = testRepo
+      process.env.GITHUB_TOKEN = githubToken
+
+      mockGetInput.mockImplementation((name: string) => {
+        if (name === 'token') return githubToken || ''
+        if (name === 'owner') return owner
+        if (name === 'repo') return repo
+        if (name === 'mode') return 'PR'
+        if (name === 'to-tag') return '@current'
+        if (name === 'verbose') return 'false'
+        return ''
+      })
+
+      await run()
+
       expect(mockSetFailed).not.toHaveBeenCalled()
-      expect(mockSetOutput).toHaveBeenCalled()
+      expect(mockSetOutput).toHaveBeenCalledWith('failed', 'false')
+      // to-tag output should be a non-empty tag name
+      const toTagCall = mockSetOutput.mock.calls.find(([k]: [string]) => k === 'to-tag')
+      expect(toTagCall).toBeDefined()
+      expect(toTagCall![1]).toBeTruthy()
+    }, 30000)
+
+    it('should resolve from-tag: -1 relative to an explicit to-tag', async () => {
+      const [owner, repo] = testRepo.split('/')
+      process.env.GITHUB_REPOSITORY = testRepo
+      process.env.GITHUB_TOKEN = githubToken
+
+      mockGetInput.mockImplementation((name: string) => {
+        if (name === 'token') return githubToken || ''
+        if (name === 'owner') return owner
+        if (name === 'repo') return repo
+        if (name === 'mode') return 'PR'
+        if (name === 'from-tag') return '-1'
+        if (name === 'to-tag') return 'v0.1.1'
+        if (name === 'verbose') return 'false'
+        return ''
+      })
+
+      await run()
+
+      expect(mockSetFailed).not.toHaveBeenCalled()
+      expect(mockSetOutput).toHaveBeenCalledWith('failed', 'false')
+      // offset -1 from v0.1.1 should resolve to v0.1.0
+      expect(mockSetOutput).toHaveBeenCalledWith('from-tag', 'v0.1.0')
+    }, 30000)
+
+    it('should resolve from-tag: @latest-release to a non-empty tag different from to-tag', async () => {
+      const [owner, repo] = testRepo.split('/')
+      process.env.GITHUB_REPOSITORY = testRepo
+      process.env.GITHUB_TOKEN = githubToken
+
+      mockGetInput.mockImplementation((name: string) => {
+        if (name === 'token') return githubToken || ''
+        if (name === 'owner') return owner
+        if (name === 'repo') return repo
+        if (name === 'mode') return 'PR'
+        if (name === 'from-tag') return '@latest-release'
+        if (name === 'verbose') return 'false'
+        return ''
+      })
+
+      await run()
+
+      expect(mockSetFailed).not.toHaveBeenCalled()
+      expect(mockSetOutput).toHaveBeenCalledWith('failed', 'false')
+      const fromTagCall = mockSetOutput.mock.calls.find(([k]: [string]) => k === 'from-tag')
+      const toTagCall = mockSetOutput.mock.calls.find(([k]: [string]) => k === 'to-tag')
+      expect(fromTagCall![1]).toBeTruthy()
+      expect(fromTagCall![1]).not.toBe(toTagCall![1])
     }, 30000)
   })
 
@@ -151,6 +224,32 @@ describe('E2E Tests', () => {
         'changelog',
         expect.any(String)
       )
+    }, 30000)
+
+    it('should resolve from-tag: -1 relative to explicit to-tag on Gitea', async () => {
+      const [owner, repo] = testRepo.split('/')
+      process.env.GITEA_REPOSITORY = testRepo
+      process.env.GITEA_TOKEN = giteaToken
+      process.env.GITEA_SERVER_URL = giteaUrl
+
+      mockGetInput.mockImplementation((name: string) => {
+        if (name === 'token') return giteaToken || ''
+        if (name === 'platform') return 'gitea'
+        if (name === 'owner') return owner
+        if (name === 'repo') return repo
+        if (name === 'mode') return 'PR'
+        if (name === 'from-tag') return '-1'
+        if (name === 'to-tag') return 'v1.1.0'
+        if (name === 'verbose') return 'false'
+        return ''
+      })
+
+      await run()
+
+      expect(mockSetFailed).not.toHaveBeenCalled()
+      expect(mockSetOutput).toHaveBeenCalledWith('failed', 'false')
+      // offset -1 from v1.1.0 should resolve to v1.0.0
+      expect(mockSetOutput).toHaveBeenCalledWith('from-tag', 'v1.0.0')
     }, 30000)
   })
 })

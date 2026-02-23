@@ -15,6 +15,7 @@ export declare class GitProvider extends BaseProvider {
     getTagAnnotation(tag: string): Promise<string | null>;
     private getTagByCreateTime;
     getDiffRemote(owner: string, repo: string, base: string, head: string): Promise<DiffInfo>;
+    getLatestRelease(_owner: string, _repo: string): Promise<string | null>;
     getForCommitHash(_owner: string, _repo: string, _commitSha: string, _maxPullRequests: number): Promise<PullRequestInfo[]>;
     getBetweenDates(_owner: string, _repo: string, _fromDate: moment.Moment, _toDate: moment.Moment, _maxPullRequests: number): Promise<PullRequestInfo[]>;
     getOpen(_owner: string, _repo: string, _maxPullRequests: number): Promise<PullRequestInfo[]>;

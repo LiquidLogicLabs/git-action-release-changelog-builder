@@ -92,5 +92,12 @@ export abstract class BaseProvider {
     base: string,
     head: string
   ): Promise<CommitInfo[]>
+
+  /**
+   * Get the tag name associated with the most recent published release.
+   * Returns null if the platform does not support releases, if no releases
+   * exist, or if the release cannot be determined.
+   */
+  abstract getLatestRelease(owner: string, repo: string): Promise<string | null>
 }
 

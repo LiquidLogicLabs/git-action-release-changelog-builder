@@ -66,8 +66,8 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 | `platform` | No | Auto-detected | Platform: `github`, `gitea`, `local`, or `git` |
 | `token` | No | Environment token | Authentication token |
 | `repo` | No | Current repo | Repository to use (owner/repo or URL). Defaults to current repo if omitted. |
-| `from-tag` | No* | Previous tag | Previous tag to compare from |
-| `to-tag` | No* | Current tag | New tag to compare to |
+| `from-tag` | No | Previous tag | Previous tag to compare from. Supports special values — see below. |
+| `to-tag` | No | `@current` | New tag to compare to. `@current` uses the tag the workflow is running under, or the most recent tag if not on a tag event. |
 | `mode` | No | `PR` | Mode: `PR`, `COMMIT`, or `HYBRID` |
 | `configuration` | No | Defaults | Path to configuration JSON file |
 | `configuration-json` | No | - | Configuration JSON string |
@@ -82,6 +82,13 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 | `max-tags-to-fetch` | No | `1000` | Maximum number of tags to fetch when searching for tags. If a specified tag is not found in the initial batch (200 tags), more tags will be fetched up to this limit |
 
 \* Either `from-tag`/`to-tag` must be provided, or the action must run on a tag
+
+### Special values for `from-tag`
+
+| Value | Behaviour |
+|-------|-----------|
+| `@latest-release` | Resolves to the tag of the most recent published release. Falls back to the previous tag (with a warning) if the platform has no release API (local git), no releases exist, or the latest release tag is the same as `to-tag`. |
+| `-N` (e.g. `-1`, `-2`) | Selects the tag N positions before `to-tag` in newest-first history. `-1` is equivalent to the default auto-detect behaviour. Throws if N exceeds the number of available tags before `to-tag`. |
 
 ## Outputs
 

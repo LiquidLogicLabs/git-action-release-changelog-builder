@@ -15,11 +15,21 @@ inputs:
     description: 'Defines the repository to create the changelog for (owner/repo or URL). Defaults to the current repository if not provided.'
     required: false
   from-tag:
-    description: 'Defines the previous tag to compare against'
+    description: |
+      Defines the previous tag to compare against. Supports special values:
+      - `@latest-release`: resolves to the tag of the most recent published release
+        (falls back to the previous tag with a warning on local git or if no release exists,
+        or if the release tag is the same as to-tag).
+      - `-N` (e.g. `-1`, `-2`): selects the tag N positions before to-tag in newest-first
+        history (e.g. `-1` is equivalent to the default auto-detect behaviour).
     required: false
   to-tag:
-    description: 'Defines the newly tag created'
+    description: |
+      Defines the new tag to compare to. Defaults to `@current`.
+      - `@current` (default): use the tag the workflow is running under (from the git ref),
+        or fall back to the most recent tag if not running on a tag event.
     required: false
+    default: '@current'
   mode:
     description: 'Defines the mode used to retrieve the information. Available options: [`PR`, `COMMIT`, `HYBRID`]. Defaults to `PR`.'
     required: false

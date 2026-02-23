@@ -305,6 +305,19 @@ class GiteaProvider extends base_1.BaseProvider {
         }
         return commits;
     }
+    async getLatestRelease(owner, repo) {
+        try {
+            const response = await this.api.repos.repoGetLatestRelease(owner, repo);
+            if (response.error !== null || !response.data?.tag_name) {
+                return null;
+            }
+            return response.data.tag_name;
+        }
+        catch {
+            // 404 = no releases published yet
+            return null;
+        }
+    }
     mapPullRequest(pr, status = 'open') {
         return {
             number: pr.number || 0,
