@@ -1,3 +1,12 @@
+## [3.0.2](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.1...v3.0.2) (2026-02-23)
+
+
+### Features
+
+* add from-tag offset (-N), [@latest-release](https://github.com/latest-release), and to-tag [@current](https://github.com/current) support ([5a46cea](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/5a46ceaf97ae649483ae59bf1cd0044f32ccf671))
+
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
