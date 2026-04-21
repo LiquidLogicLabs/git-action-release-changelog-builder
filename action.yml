@@ -94,6 +94,6 @@ outputs:
   failed:
     description: Defines if there was an issue with the action run, and the changelog may not have been generated correctly. [true, false]
 runs:
-  using: 'node22'
+  using: 'node24'
   main: 'dist/index.js'
 
