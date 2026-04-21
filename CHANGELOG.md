@@ -1,3 +1,12 @@
+## [3.0.3](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.2...v3.0.3) (2026-04-21)
+
+
+### Bug Fixes
+
+* correct action runtime to node24 ([c0f715f](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/c0f715fd3ee4b22dd4f3e968140cacda7537646c))
+
+
+
 ## [3.0.2](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.1...v3.0.2) (2026-02-23)
 
 
