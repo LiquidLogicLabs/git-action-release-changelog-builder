@@ -111,6 +111,9 @@ function resolveVerbose() {
 function getInputs() {
     const platform = parsePlatform(normalizeOptional(core.getInput('platform') || ''));
     const token = normalizeOptional(core.getInput('token') || '');
+    if (token) {
+        core.setSecret(token);
+    }
     const repo = normalizeOptional(core.getInput('repo') || '');
     const fromTag = normalizeOptional(core.getInput('from-tag') || '');
     const toTag = normalizeOptional(core.getInput('to-tag') || '');

@@ -52313,8 +52313,15 @@ const builtInProviders = [
 function getBuiltInProviders() {
     return [...builtInProviders];
 }
+/**
+ * Provider aliases - these all map to the 'generic' provider
+ * 'git', 'local', and 'generic' are equivalent aliases for local Git CLI operations
+ */
+const GENERIC_ALIASES = ['git', 'local', 'generic'];
 function getProviderById(id, providers = builtInProviders) {
-    return providers.find(provider => provider.id === id);
+    // Normalize aliases to 'generic'
+    const normalizedId = GENERIC_ALIASES.includes(id.toLowerCase()) ? 'generic' : id;
+    return providers.find(provider => provider.id === normalizedId);
 }
 //# sourceMappingURL=index.js.map
 
@@ -92744,6 +92751,9 @@ function resolveVerbose() {
 function getInputs() {
     const platform = parsePlatform(normalizeOptional(core.getInput('platform') || ''));
     const token = normalizeOptional(core.getInput('token') || '');
+    if (token) {
+        core.setSecret(token);
+    }
     const repo = normalizeOptional(core.getInput('repo') || '');
     const fromTag = normalizeOptional(core.getInput('from-tag') || '');
     const toTag = normalizeOptional(core.getInput('to-tag') || '');
