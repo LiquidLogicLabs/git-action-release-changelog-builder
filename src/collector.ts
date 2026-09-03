@@ -76,6 +76,8 @@ export async function collectPullRequests(
     )
   }
 
+  logger.debug(`Collecting items in ${mode} mode between ${fromTag.name} and ${toTag.name} (includeOpen: ${includeOpen})`)
+
   if (mode === 'PR' || mode === 'HYBRID') {
     // Get PRs between dates
     const fromDate = fromTag.date || moment().subtract(365, 'days')
@@ -96,6 +98,8 @@ export async function collectPullRequests(
     const commitPRs = convertCommitsToPRs(commits, owner, repo)
     pullRequests.push(...commitPRs)
   }
+
+  logger.debug(`Collected ${pullRequests.length} items for ${owner}/${repo}`)
 
   return pullRequests
 }

@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as fs from 'fs'
 import * as path from 'path'
-import { ActionInputs, Configuration, Category } from './types'
+import { ActionInputs, Configuration } from './types'
 
 /**
  * Default configuration

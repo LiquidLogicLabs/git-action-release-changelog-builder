@@ -94855,6 +94855,7 @@ async function collectPullRequests(provider, owner, repo, fromTag, toTag, mode, 
     if ((platform === 'local' || platform === 'git') && (mode === 'PR' || mode === 'HYBRID')) {
         throw new Error(`PR and HYBRID modes are not supported for ${platform} platform. Use COMMIT mode instead.`);
     }
+    logger.debug(`Collecting items in ${mode} mode between ${fromTag.name} and ${toTag.name} (includeOpen: ${includeOpen})`);
     if (mode === 'PR' || mode === 'HYBRID') {
         // Get PRs between dates
         const fromDate = fromTag.date || (0, moment_1.default)().subtract(365, 'days');
@@ -94872,6 +94873,7 @@ async function collectPullRequests(provider, owner, repo, fromTag, toTag, mode, 
         const commitPRs = convertCommitsToPRs(commits, owner, repo);
         pullRequests.push(...commitPRs);
     }
+    logger.debug(`Collected ${pullRequests.length} items for ${owner}/${repo}`);
     return pullRequests;
 }
 
@@ -95232,7 +95234,7 @@ async function detectOwnerRepo(repoInput, platform, logger) {
                 }
                 // Parse owner/repo from git remote URL (format: git@github.com:owner/repo.git or https://github.com/owner/repo.git)
                 if (gitRemoteUrl) {
-                    const match = gitRemoteUrl.match(/(?:git@|https?:\/\/)(?:[\w.-]+@)?([\w.-]+)[\/:]([\w.-]+)\/([\w.-]+)(?:\.git)?/);
+                    const match = gitRemoteUrl.match(/(?:git@|https?:\/\/)(?:[\w.-]+@)?([\w.-]+)[/:]([\w.-]+)\/([\w.-]+)(?:\.git)?/);
                     if (match && match[2] && match[3]) {
                         owner = match[2];
                         repo = match[3].replace(/\.git$/, '');
@@ -95537,12 +95539,10 @@ async function run() {
         const modeInput = inputs.mode;
         const configurationJson = inputs.configurationJson;
         const configurationFile = inputs.configuration;
-        const ignorePreReleases = inputs.ignorePreReleases;
         const fetchTagAnnotations = inputs.fetchTagAnnotations;
         const prefixMessage = inputs.prefixMessage;
         const postfixMessage = inputs.postfixMessage;
         const includeOpen = inputs.includeOpen;
-        const failOnError = inputs.failOnError;
         const maxTagsToFetch = inputs.maxTagsToFetch;
         // Get repository path
         const repositoryPath = process.env.GITHUB_WORKSPACE || process.env.GITEA_WORKSPACE || process.cwd();

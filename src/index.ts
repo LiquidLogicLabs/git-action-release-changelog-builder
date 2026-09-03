@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import { Agent, setGlobalDispatcher } from 'undici'
-import {BaseProvider} from './providers/base'
 import {createProvider} from './providers/factory'
 import {detectPlatform, getApiBaseUrl} from './platform'
 import { getInputs, resolveConfiguration, resolveVerbose, resolveDebugMode, ParsedInputs } from './config'
@@ -9,10 +8,7 @@ import {detectOwnerRepo} from './context'
 import {detectToken} from './token'
 import {resolveTags} from './tags'
 import {collectPullRequests} from './collector'
-import {TagInfo, PullRequestInfo} from './types'
 import {Logger} from './logger'
-import moment from 'moment'
-import * as path from 'path'
 import {Configuration} from './types'
 
 /**
@@ -48,12 +44,10 @@ export async function run(): Promise<void> {
     const modeInput = inputs.mode
     const configurationJson = inputs.configurationJson
     const configurationFile = inputs.configuration
-    const ignorePreReleases = inputs.ignorePreReleases
     const fetchTagAnnotations = inputs.fetchTagAnnotations
     const prefixMessage = inputs.prefixMessage
     const postfixMessage = inputs.postfixMessage
     const includeOpen = inputs.includeOpen
-    const failOnError = inputs.failOnError
     const maxTagsToFetch = inputs.maxTagsToFetch
 
     // Get repository path

@@ -1,5 +1,4 @@
 import {Configuration, Category, PullRequestInfo} from './types'
-import * as core from '@actions/core'
 
 /**
  * Generate changelog from pull requests using configuration

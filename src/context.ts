@@ -97,7 +97,7 @@ export async function detectOwnerRepo(
 
         // Parse owner/repo from git remote URL (format: git@github.com:owner/repo.git or https://github.com/owner/repo.git)
         if (gitRemoteUrl) {
-          const match = gitRemoteUrl.match(/(?:git@|https?:\/\/)(?:[\w.-]+@)?([\w.-]+)[\/:]([\w.-]+)\/([\w.-]+)(?:\.git)?/)
+          const match = gitRemoteUrl.match(/(?:git@|https?:\/\/)(?:[\w.-]+@)?([\w.-]+)[/:]([\w.-]+)\/([\w.-]+)(?:\.git)?/)
           if (match && match[2] && match[3]) {
             owner = match[2]
             repo = match[3].replace(/\.git$/, '')

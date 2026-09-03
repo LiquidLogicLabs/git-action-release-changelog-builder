@@ -11,7 +11,7 @@ import {run} from '../../index'
 // Mock @actions/core to capture outputs
 jest.mock('@actions/core', () => ({
   getBooleanInput: jest.fn((name: string) => name === 'verbose'),
-  getInput: jest.fn((name: string) => {
+  getInput: jest.fn(() => {
     // Return empty strings for inputs not provided
     return ''
   }),
@@ -208,6 +208,7 @@ describe('E2E Tests', () => {
       mockGetInput.mockImplementation((name: string) => {
         if (name === 'token') return giteaToken || ''
         if (name === 'platform') return 'gitea'
+        if (name === 'owner') return owner
         if (name === 'repo') return repo
         if (name === 'mode') return 'PR'
         if (name === 'from-tag') return 'v1.0.0'

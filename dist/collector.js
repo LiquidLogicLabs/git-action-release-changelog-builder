@@ -58,6 +58,7 @@ async function collectPullRequests(provider, owner, repo, fromTag, toTag, mode, 
     if ((platform === 'local' || platform === 'git') && (mode === 'PR' || mode === 'HYBRID')) {
         throw new Error(`PR and HYBRID modes are not supported for ${platform} platform. Use COMMIT mode instead.`);
     }
+    logger.debug(`Collecting items in ${mode} mode between ${fromTag.name} and ${toTag.name} (includeOpen: ${includeOpen})`);
     if (mode === 'PR' || mode === 'HYBRID') {
         // Get PRs between dates
         const fromDate = fromTag.date || (0, moment_1.default)().subtract(365, 'days');
@@ -75,6 +76,7 @@ async function collectPullRequests(provider, owner, repo, fromTag, toTag, mode, 
         const commitPRs = convertCommitsToPRs(commits, owner, repo);
         pullRequests.push(...commitPRs);
     }
+    logger.debug(`Collected ${pullRequests.length} items for ${owner}/${repo}`);
     return pullRequests;
 }
 //# sourceMappingURL=collector.js.map
