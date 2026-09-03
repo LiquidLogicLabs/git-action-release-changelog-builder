@@ -34,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.detectOwnerRepo = detectOwnerRepo;
-const github = __importStar(require("@actions/github"));
+const context_1 = require("./providers/context");
 const exec = __importStar(require("@actions/exec"));
 const path = __importStar(require("path"));
 /**
@@ -78,17 +78,13 @@ async function detectOwnerRepo(repoInput, platform, logger) {
                 }
             }
         }
-        // Fallback: Try github.context for GitHub (if not already set)
-        if ((!owner || !repo) && platform === 'github') {
-            try {
-                if (github.context && github.context.repo) {
-                    owner = github.context.repo.owner;
-                    repo = github.context.repo.repo;
-                    logger.debug(`Using owner/repo from github.context: ${owner}/${repo}`);
-                }
-            }
-            catch (error) {
-                logger.debug(`Failed to get owner/repo from github.context: ${error}`);
+        // Fallback: Try the CI context (GitHub only; the helper enforces the platform check)
+        if (!owner || !repo) {
+            const ctx = (0, context_1.getContextRepo)(platform);
+            if (ctx) {
+                owner = ctx.owner;
+                repo = ctx.repo;
+                logger.debug(`Using owner/repo from github.context: ${owner}/${repo}`);
             }
         }
         // For local/git platforms, try to get owner/repo from git config or repository path

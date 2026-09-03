@@ -38,5 +38,19 @@ export default [
   {
     ignores: ['dist/', 'node_modules/', '**/*.js'],
   },
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['src/providers/**', 'src/platforms/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          { name: '@actions/github', message: 'Platform SDKs belong in src/providers/ or src/platforms/ only. See spec 4.2 (backend parity).' }
+        ],
+        patterns: [
+          { group: ['@octokit/*'], message: 'Platform SDKs belong in src/providers/ or src/platforms/ only. See spec 4.2 (backend parity).' }
+        ]
+      }]
+    }
+  }
 ];
 

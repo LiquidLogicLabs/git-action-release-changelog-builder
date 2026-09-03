@@ -1,4 +1,4 @@
-import * as github from '@actions/github'
+import {getContextRepo} from './providers/context'
 import * as exec from '@actions/exec'
 import * as path from 'path'
 import {ProviderPlatform} from './types'
@@ -57,16 +57,13 @@ export async function detectOwnerRepo(
       }
     }
 
-    // Fallback: Try github.context for GitHub (if not already set)
-    if ((!owner || !repo) && platform === 'github') {
-      try {
-        if (github.context && github.context.repo) {
-          owner = github.context.repo.owner
-          repo = github.context.repo.repo
-          logger.debug(`Using owner/repo from github.context: ${owner}/${repo}`)
-        }
-      } catch (error) {
-        logger.debug(`Failed to get owner/repo from github.context: ${error}`)
+    // Fallback: Try the CI context (GitHub only; the helper enforces the platform check)
+    if (!owner || !repo) {
+      const ctx = getContextRepo(platform)
+      if (ctx) {
+        owner = ctx.owner
+        repo = ctx.repo
+        logger.debug(`Using owner/repo from github.context: ${owner}/${repo}`)
       }
     }
 

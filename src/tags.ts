@@ -1,7 +1,7 @@
 import {BaseProvider} from './providers/base'
 import {TagInfo, ProviderPlatform} from './types'
 import {Logger} from './logger'
-import * as github from '@actions/github'
+import {getContextRef} from './providers/context'
 
 /**
  * Resolve tags from inputs or auto-detect from repository tags
@@ -92,11 +92,7 @@ export async function resolveTags(
     if (platform === 'gitea') {
       ref = process.env.GITEA_REF
     } else {
-      try {
-        ref = github.context.ref
-      } catch (error) {
-        logger.debug(`Failed to get ref from github.context: ${error}`)
-      }
+      ref = getContextRef(platform)
     }
 
     if (ref && ref.startsWith('refs/tags/')) {

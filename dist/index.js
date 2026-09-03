@@ -95154,7 +95154,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.detectOwnerRepo = detectOwnerRepo;
-const github = __importStar(__nccwpck_require__(3228));
+const context_1 = __nccwpck_require__(9513);
 const exec = __importStar(__nccwpck_require__(5236));
 const path = __importStar(__nccwpck_require__(6928));
 /**
@@ -95198,17 +95198,13 @@ async function detectOwnerRepo(repoInput, platform, logger) {
                 }
             }
         }
-        // Fallback: Try github.context for GitHub (if not already set)
-        if ((!owner || !repo) && platform === 'github') {
-            try {
-                if (github.context && github.context.repo) {
-                    owner = github.context.repo.owner;
-                    repo = github.context.repo.repo;
-                    logger.debug(`Using owner/repo from github.context: ${owner}/${repo}`);
-                }
-            }
-            catch (error) {
-                logger.debug(`Failed to get owner/repo from github.context: ${error}`);
+        // Fallback: Try the CI context (GitHub only; the helper enforces the platform check)
+        if (!owner || !repo) {
+            const ctx = (0, context_1.getContextRepo)(platform);
+            if (ctx) {
+                owner = ctx.owner;
+                repo = ctx.repo;
+                logger.debug(`Using owner/repo from github.context: ${owner}/${repo}`);
             }
         }
         // For local/git platforms, try to get owner/repo from git config or repository path
@@ -95898,6 +95894,75 @@ class BaseProvider {
     }
 }
 exports.BaseProvider = BaseProvider;
+
+
+/***/ }),
+
+/***/ 9513:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getContextRef = getContextRef;
+exports.getContextRepo = getContextRepo;
+const github = __importStar(__nccwpck_require__(3228));
+/** Ref from the CI context. Only GitHub exposes one this way. */
+function getContextRef(platform) {
+    if (platform !== 'github')
+        return undefined;
+    try {
+        return github.context.ref;
+    }
+    catch {
+        return undefined;
+    }
+}
+/** owner/repo from the CI context. Only GitHub exposes one this way. */
+function getContextRepo(platform) {
+    if (platform !== 'github')
+        return undefined;
+    try {
+        const r = github.context.repo;
+        return r?.owner && r?.repo ? { owner: r.owner, repo: r.repo } : undefined;
+    }
+    catch {
+        return undefined;
+    }
+}
 
 
 /***/ }),
@@ -96862,46 +96927,13 @@ exports.GithubProvider = GithubProvider;
 /***/ }),
 
 /***/ 9506:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.resolveTags = resolveTags;
-const github = __importStar(__nccwpck_require__(3228));
+const context_1 = __nccwpck_require__(9513);
 /**
  * Resolve tags from inputs or auto-detect from repository tags
  * @param provider Provider instance
@@ -96971,12 +97003,7 @@ async function resolveTags(provider, owner, repo, repositoryPath, fromTagInput, 
             ref = process.env.GITEA_REF;
         }
         else {
-            try {
-                ref = github.context.ref;
-            }
-            catch (error) {
-                logger.debug(`Failed to get ref from github.context: ${error}`);
-            }
+            ref = (0, context_1.getContextRef)(platform);
         }
         if (ref && ref.startsWith('refs/tags/')) {
             const tagName = ref.replace('refs/tags/', '');
