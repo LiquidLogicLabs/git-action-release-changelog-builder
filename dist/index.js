@@ -95331,11 +95331,74 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.assertNotOptionLike = assertNotOptionLike;
+exports.assertNotRefspecLike = assertNotRefspecLike;
+exports.assertSafeGitRef = assertSafeGitRef;
+exports.isSafeGitRef = isSafeGitRef;
 exports.getTagAnnotation = getTagAnnotation;
 exports.tagExists = tagExists;
 exports.getTagCommit = getTagCommit;
 const exec = __importStar(__nccwpck_require__(5236));
 const core = __importStar(__nccwpck_require__(7484));
+/**
+ * Reject a value git would read as an option rather than as data.
+ *
+ * An argv array stops the SHELL interpreting a value; it does nothing about git's own
+ * option parser, which reads a leading "-" as an option wherever it appears. Some of those
+ * options execute commands. Verified against real git:
+ *
+ *   git push origin --delete '--receive-pack=touch /tmp/PWNED' v9   ->  the file is created
+ *
+ * (The trailing real ref is required: without it git aborts with "--delete doesn't make
+ * sense without any refs" and nothing runs.)
+ *
+ * This action never pushes, but it does hand tag names to `git tag -l`, `git rev-list`,
+ * `git cat-file` and the `<base>..<head>` range given to `git log` / `git diff`, and those
+ * commands have their own dangerous options -- `git diff --output=<file>` alone is an
+ * arbitrary file write.
+ */
+function assertNotOptionLike(value, label) {
+    if (value !== undefined && value.startsWith('-')) {
+        throw new Error(`Refusing to pass a ${label} beginning with "-" to git: ${JSON.stringify(value)}. ` +
+            'git would read it as an option, and options such as --upload-pack/--receive-pack execute commands.');
+    }
+}
+/**
+ * Reject a value git would read as a REFSPEC rather than as a ref.
+ *
+ * Distinct from the option check and not covered by it. `+` is the force prefix and `:`
+ * separates source from destination, so `git push origin '+main'` force-updates the remote
+ * BRANCH. `git check-ref-format` accepts `refs/tags/+main` and `git tag` creates it, so the
+ * value passes every other check -- verified against real git, the remote branch moved to
+ * the local HEAD.
+ */
+function assertNotRefspecLike(value, label) {
+    if (value.startsWith('+') || value.includes(':')) {
+        throw new Error(`Refusing to pass a ${label} that git would read as a refspec: ${JSON.stringify(value)}. ` +
+            '"+" forces and ":" separates source from destination, so this could update a branch instead of a tag.');
+    }
+}
+/**
+ * Both checks, for a value that is about to become an argv entry naming a ref.
+ */
+function assertSafeGitRef(value, label) {
+    assertNotOptionLike(value, label);
+    assertNotRefspecLike(value, label);
+}
+/**
+ * Non-throwing form of {@link assertSafeGitRef}, derived from the same guards so the two
+ * cannot drift. Used where a hostile value should be skipped rather than abort the batch --
+ * e.g. one bad tag name read out of `git tag --list` must not discard every other tag.
+ */
+function isSafeGitRef(value) {
+    try {
+        assertSafeGitRef(value, 'ref');
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
 /**
  * Execute a git command and return the output
  */
@@ -95372,6 +95435,9 @@ async function execGit(repositoryPath, args, silent = false) {
  * @returns Tag annotation message or null if tag doesn't exist or isn't annotated
  */
 async function getTagAnnotation(repositoryPath, tag) {
+    // Outside the try on purpose: a hostile tag name must surface as a refusal, not be
+    // swallowed into the "no annotation" return below.
+    assertSafeGitRef(tag, 'tag name');
     try {
         // Try to get annotated tag message
         // git tag -l -n999 <tag> will show the annotation if it exists
@@ -95432,6 +95498,8 @@ async function getTagAnnotation(repositoryPath, tag) {
  * Check if a tag exists
  */
 async function tagExists(repositoryPath, tag) {
+    // Outside the try on purpose: a refusal must not be reported as "tag does not exist".
+    assertSafeGitRef(tag, 'tag name');
     try {
         const output = await execGit(repositoryPath, ['tag', '-l', tag], true);
         return output.trim() === tag;
@@ -95444,6 +95512,8 @@ async function tagExists(repositoryPath, tag) {
  * Get the commit SHA that a tag points to
  */
 async function getTagCommit(repositoryPath, tag) {
+    // Outside the try on purpose: a refusal must not be reported as "no such tag".
+    assertSafeGitRef(tag, 'tag name');
     try {
         return await execGit(repositoryPath, ['rev-list', '-n', '1', tag], true);
     }
@@ -96082,7 +96152,17 @@ class GitProvider extends base_1.BaseProvider {
             const tagNames = output
                 .trim()
                 .split('\n')
-                .filter(name => name.trim().length > 0)
+                .map(name => name.trim())
+                .filter(name => name.length > 0)
+                .filter(name => {
+                // A tag name is repository content, not a constant: it can be created upstream with
+                // a leading "-" and would then be read as an option by the `git rev-list` below.
+                // Skip the one bad name rather than aborting the whole listing.
+                if ((0, git_1.isSafeGitRef)(name))
+                    return true;
+                core.warning(`Skipping tag name git would not read as data: ${JSON.stringify(name)}`);
+                return false;
+            })
                 .slice(0, maxTagsToFetch);
             for (const tagName of tagNames) {
                 const commitSha = await (0, git_1.getTagCommit)(this.repositoryPath, tagName);
@@ -96107,6 +96187,8 @@ class GitProvider extends base_1.BaseProvider {
         return await (0, git_1.getTagAnnotation)(this.repositoryPath, tag);
     }
     async getTagByCreateTime(repositoryPath, tagInfo) {
+        // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+        (0, git_1.assertSafeGitRef)(tagInfo.name, 'tag name');
         try {
             let output = '';
             await exec.exec('git', ['for-each-ref', '--format=%(creatordate:iso8601)', `refs/tags/${tagInfo.name}`], {
@@ -96130,6 +96212,8 @@ class GitProvider extends base_1.BaseProvider {
         return tagInfo;
     }
     async getDiffRemote(owner, repo, base, head) {
+        (0, git_1.assertSafeGitRef)(base, 'base ref');
+        (0, git_1.assertSafeGitRef)(head, 'head ref');
         const commits = await this.getCommits(owner, repo, base, head);
         let changedFiles = 0;
         let additions = 0;
@@ -96188,6 +96272,10 @@ class GitProvider extends base_1.BaseProvider {
     }
     /* eslint-enable @typescript-eslint/no-unused-vars */
     async getCommits(owner, repo, base, head) {
+        // Outside the try on purpose: `${base}..${head}` becomes one argv entry, so a base
+        // beginning with "-" is read as an option by `git log`, not as a revision range.
+        (0, git_1.assertSafeGitRef)(base, 'base ref');
+        (0, git_1.assertSafeGitRef)(head, 'head ref');
         const commits = [];
         try {
             let output = '';
@@ -96341,6 +96429,8 @@ class GiteaProvider extends base_1.BaseProvider {
         return await (0, git_1.getTagAnnotation)(this.repositoryPath, tag);
     }
     async getTagByCreateTime(repositoryPath, tagInfo) {
+        // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+        (0, git_1.assertSafeGitRef)(tagInfo.name, 'tag name');
         try {
             let output = '';
             await exec.exec('git', ['for-each-ref', '--format=%(creatordate:rfc)', `refs/tags/${tagInfo.name}`], {
@@ -96364,6 +96454,8 @@ class GiteaProvider extends base_1.BaseProvider {
         return tagInfo;
     }
     async getDiffRemote(owner, repo, base, head) {
+        (0, git_1.assertSafeGitRef)(base, 'base ref');
+        (0, git_1.assertSafeGitRef)(head, 'head ref');
         // Gitea API limitation: can't get diff via API easily, use git command
         // For now, return basic info and let the git helper handle the actual diff
         // This is a simplified version - in practice, you'd use git commands
@@ -96506,6 +96598,10 @@ class GiteaProvider extends base_1.BaseProvider {
         return prs;
     }
     async getCommits(owner, repo, base, head) {
+        // Outside the try on purpose: `${base}..${head}` becomes one argv entry, so a base
+        // beginning with "-" is read as an option by `git log`, not as a revision range.
+        (0, git_1.assertSafeGitRef)(base, 'base ref');
+        (0, git_1.assertSafeGitRef)(head, 'head ref');
         const commits = [];
         try {
             // Use git command since Gitea API commit comparison is limited
@@ -96709,6 +96805,8 @@ class GithubProvider extends base_1.BaseProvider {
         }
     }
     async getTagByCreateTime(repositoryPath, tagInfo) {
+        // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+        (0, git_1.assertSafeGitRef)(tagInfo.name, 'tag name');
         try {
             const exec = await Promise.resolve().then(() => __importStar(__nccwpck_require__(5236)));
             let output = '';

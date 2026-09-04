@@ -3,7 +3,7 @@ import {PullRequestInfo, CommitInfo, TagInfo, DiffInfo} from '../types'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import moment from 'moment'
-import {getTagAnnotation, getTagCommit} from '../git'
+import {assertSafeGitRef, getTagAnnotation, getTagCommit, isSafeGitRef} from '../git'
 
 /**
  * Git provider for local git repositories
@@ -46,7 +46,16 @@ export class GitProvider extends BaseProvider {
       const tagNames = output
         .trim()
         .split('\n')
-        .filter(name => name.trim().length > 0)
+        .map(name => name.trim())
+        .filter(name => name.length > 0)
+        .filter(name => {
+          // A tag name is repository content, not a constant: it can be created upstream with
+          // a leading "-" and would then be read as an option by the `git rev-list` below.
+          // Skip the one bad name rather than aborting the whole listing.
+          if (isSafeGitRef(name)) return true
+          core.warning(`Skipping tag name git would not read as data: ${JSON.stringify(name)}`)
+          return false
+        })
         .slice(0, maxTagsToFetch)
 
       for (const tagName of tagNames) {
@@ -83,6 +92,9 @@ export class GitProvider extends BaseProvider {
     repositoryPath: string,
     tagInfo: TagInfo
   ): Promise<TagInfo> {
+    // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+    assertSafeGitRef(tagInfo.name, 'tag name')
+
     try {
       let output = ''
       await exec.exec(
@@ -117,6 +129,9 @@ export class GitProvider extends BaseProvider {
     base: string,
     head: string
   ): Promise<DiffInfo> {
+    assertSafeGitRef(base, 'base ref')
+    assertSafeGitRef(head, 'head ref')
+
     const commits = await this.getCommits(owner, repo, base, head)
     
     let changedFiles = 0
@@ -212,6 +227,11 @@ export class GitProvider extends BaseProvider {
     base: string,
     head: string
   ): Promise<CommitInfo[]> {
+    // Outside the try on purpose: `${base}..${head}` becomes one argv entry, so a base
+    // beginning with "-" is read as an option by `git log`, not as a revision range.
+    assertSafeGitRef(base, 'base ref')
+    assertSafeGitRef(head, 'head ref')
+
     const commits: CommitInfo[] = []
 
     try {

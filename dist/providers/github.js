@@ -120,6 +120,8 @@ class GithubProvider extends base_1.BaseProvider {
         }
     }
     async getTagByCreateTime(repositoryPath, tagInfo) {
+        // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+        (0, git_1.assertSafeGitRef)(tagInfo.name, 'tag name');
         try {
             const exec = await Promise.resolve().then(() => __importStar(require('@actions/exec')));
             let output = '';

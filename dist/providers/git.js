@@ -74,7 +74,17 @@ class GitProvider extends base_1.BaseProvider {
             const tagNames = output
                 .trim()
                 .split('\n')
-                .filter(name => name.trim().length > 0)
+                .map(name => name.trim())
+                .filter(name => name.length > 0)
+                .filter(name => {
+                // A tag name is repository content, not a constant: it can be created upstream with
+                // a leading "-" and would then be read as an option by the `git rev-list` below.
+                // Skip the one bad name rather than aborting the whole listing.
+                if ((0, git_1.isSafeGitRef)(name))
+                    return true;
+                core.warning(`Skipping tag name git would not read as data: ${JSON.stringify(name)}`);
+                return false;
+            })
                 .slice(0, maxTagsToFetch);
             for (const tagName of tagNames) {
                 const commitSha = await (0, git_1.getTagCommit)(this.repositoryPath, tagName);
@@ -99,6 +109,8 @@ class GitProvider extends base_1.BaseProvider {
         return await (0, git_1.getTagAnnotation)(this.repositoryPath, tag);
     }
     async getTagByCreateTime(repositoryPath, tagInfo) {
+        // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+        (0, git_1.assertSafeGitRef)(tagInfo.name, 'tag name');
         try {
             let output = '';
             await exec.exec('git', ['for-each-ref', '--format=%(creatordate:iso8601)', `refs/tags/${tagInfo.name}`], {
@@ -122,6 +134,8 @@ class GitProvider extends base_1.BaseProvider {
         return tagInfo;
     }
     async getDiffRemote(owner, repo, base, head) {
+        (0, git_1.assertSafeGitRef)(base, 'base ref');
+        (0, git_1.assertSafeGitRef)(head, 'head ref');
         const commits = await this.getCommits(owner, repo, base, head);
         let changedFiles = 0;
         let additions = 0;
@@ -180,6 +194,10 @@ class GitProvider extends base_1.BaseProvider {
     }
     /* eslint-enable @typescript-eslint/no-unused-vars */
     async getCommits(owner, repo, base, head) {
+        // Outside the try on purpose: `${base}..${head}` becomes one argv entry, so a base
+        // beginning with "-" is read as an option by `git log`, not as a revision range.
+        (0, git_1.assertSafeGitRef)(base, 'base ref');
+        (0, git_1.assertSafeGitRef)(head, 'head ref');
         const commits = [];
         try {
             let output = '';

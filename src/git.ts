@@ -2,6 +2,72 @@ import * as exec from '@actions/exec'
 import * as core from '@actions/core'
 
 /**
+ * Reject a value git would read as an option rather than as data.
+ *
+ * An argv array stops the SHELL interpreting a value; it does nothing about git's own
+ * option parser, which reads a leading "-" as an option wherever it appears. Some of those
+ * options execute commands. Verified against real git:
+ *
+ *   git push origin --delete '--receive-pack=touch /tmp/PWNED' v9   ->  the file is created
+ *
+ * (The trailing real ref is required: without it git aborts with "--delete doesn't make
+ * sense without any refs" and nothing runs.)
+ *
+ * This action never pushes, but it does hand tag names to `git tag -l`, `git rev-list`,
+ * `git cat-file` and the `<base>..<head>` range given to `git log` / `git diff`, and those
+ * commands have their own dangerous options -- `git diff --output=<file>` alone is an
+ * arbitrary file write.
+ */
+export function assertNotOptionLike(value: string | undefined, label: string): void {
+  if (value !== undefined && value.startsWith('-')) {
+    throw new Error(
+      `Refusing to pass a ${label} beginning with "-" to git: ${JSON.stringify(value)}. ` +
+        'git would read it as an option, and options such as --upload-pack/--receive-pack execute commands.'
+    )
+  }
+}
+
+/**
+ * Reject a value git would read as a REFSPEC rather than as a ref.
+ *
+ * Distinct from the option check and not covered by it. `+` is the force prefix and `:`
+ * separates source from destination, so `git push origin '+main'` force-updates the remote
+ * BRANCH. `git check-ref-format` accepts `refs/tags/+main` and `git tag` creates it, so the
+ * value passes every other check -- verified against real git, the remote branch moved to
+ * the local HEAD.
+ */
+export function assertNotRefspecLike(value: string, label: string): void {
+  if (value.startsWith('+') || value.includes(':')) {
+    throw new Error(
+      `Refusing to pass a ${label} that git would read as a refspec: ${JSON.stringify(value)}. ` +
+        '"+" forces and ":" separates source from destination, so this could update a branch instead of a tag.'
+    )
+  }
+}
+
+/**
+ * Both checks, for a value that is about to become an argv entry naming a ref.
+ */
+export function assertSafeGitRef(value: string, label: string): void {
+  assertNotOptionLike(value, label)
+  assertNotRefspecLike(value, label)
+}
+
+/**
+ * Non-throwing form of {@link assertSafeGitRef}, derived from the same guards so the two
+ * cannot drift. Used where a hostile value should be skipped rather than abort the batch --
+ * e.g. one bad tag name read out of `git tag --list` must not discard every other tag.
+ */
+export function isSafeGitRef(value: string): boolean {
+  try {
+    assertSafeGitRef(value, 'ref')
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Execute a git command and return the output
  */
 async function execGit(
@@ -43,6 +109,10 @@ async function execGit(
  * @returns Tag annotation message or null if tag doesn't exist or isn't annotated
  */
 export async function getTagAnnotation(repositoryPath: string, tag: string): Promise<string | null> {
+  // Outside the try on purpose: a hostile tag name must surface as a refusal, not be
+  // swallowed into the "no annotation" return below.
+  assertSafeGitRef(tag, 'tag name')
+
   try {
     // Try to get annotated tag message
     // git tag -l -n999 <tag> will show the annotation if it exists
@@ -114,6 +184,9 @@ export async function getTagAnnotation(repositoryPath: string, tag: string): Pro
  * Check if a tag exists
  */
 export async function tagExists(repositoryPath: string, tag: string): Promise<boolean> {
+  // Outside the try on purpose: a refusal must not be reported as "tag does not exist".
+  assertSafeGitRef(tag, 'tag name')
+
   try {
     const output = await execGit(repositoryPath, ['tag', '-l', tag], true)
     return output.trim() === tag
@@ -126,6 +199,9 @@ export async function tagExists(repositoryPath: string, tag: string): Promise<bo
  * Get the commit SHA that a tag points to
  */
 export async function getTagCommit(repositoryPath: string, tag: string): Promise<string | null> {
+  // Outside the try on purpose: a refusal must not be reported as "no such tag".
+  assertSafeGitRef(tag, 'tag name')
+
   try {
     return await execGit(repositoryPath, ['rev-list', '-n', '1', tag], true)
   } catch {

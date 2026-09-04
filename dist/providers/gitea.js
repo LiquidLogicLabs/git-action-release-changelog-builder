@@ -104,6 +104,8 @@ class GiteaProvider extends base_1.BaseProvider {
         return await (0, git_1.getTagAnnotation)(this.repositoryPath, tag);
     }
     async getTagByCreateTime(repositoryPath, tagInfo) {
+        // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+        (0, git_1.assertSafeGitRef)(tagInfo.name, 'tag name');
         try {
             let output = '';
             await exec.exec('git', ['for-each-ref', '--format=%(creatordate:rfc)', `refs/tags/${tagInfo.name}`], {
@@ -127,6 +129,8 @@ class GiteaProvider extends base_1.BaseProvider {
         return tagInfo;
     }
     async getDiffRemote(owner, repo, base, head) {
+        (0, git_1.assertSafeGitRef)(base, 'base ref');
+        (0, git_1.assertSafeGitRef)(head, 'head ref');
         // Gitea API limitation: can't get diff via API easily, use git command
         // For now, return basic info and let the git helper handle the actual diff
         // This is a simplified version - in practice, you'd use git commands
@@ -269,6 +273,10 @@ class GiteaProvider extends base_1.BaseProvider {
         return prs;
     }
     async getCommits(owner, repo, base, head) {
+        // Outside the try on purpose: `${base}..${head}` becomes one argv entry, so a base
+        // beginning with "-" is read as an option by `git log`, not as a revision range.
+        (0, git_1.assertSafeGitRef)(base, 'base ref');
+        (0, git_1.assertSafeGitRef)(head, 'head ref');
         const commits = [];
         try {
             // Use git command since Gitea API commit comparison is limited

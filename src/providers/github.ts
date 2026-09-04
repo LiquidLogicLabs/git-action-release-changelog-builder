@@ -3,7 +3,7 @@ import {PullRequestInfo, CommitInfo, TagInfo, DiffInfo} from '../types'
 import {Octokit, RestEndpointMethodTypes} from '@octokit/rest'
 import * as core from '@actions/core'
 import moment from 'moment'
-import {getTagAnnotation} from '../git'
+import {assertSafeGitRef, getTagAnnotation} from '../git'
 
 type PullRequestsListData = RestEndpointMethodTypes['pulls']['list']['response']['data']
 type PullData = RestEndpointMethodTypes['pulls']['get']['response']['data']
@@ -110,6 +110,9 @@ export class GithubProvider extends BaseProvider {
     repositoryPath: string,
     tagInfo: TagInfo
   ): Promise<TagInfo> {
+    // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+    assertSafeGitRef(tagInfo.name, 'tag name')
+
     try {
       const exec = await import('@actions/exec')
       let output = ''

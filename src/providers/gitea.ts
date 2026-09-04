@@ -3,7 +3,7 @@ import {PullRequestInfo, CommitInfo, TagInfo, DiffInfo} from '../types'
 import {Api, PullRequest, giteaApi} from 'gitea-js'
 import * as core from '@actions/core'
 import moment from 'moment'
-import {getTagAnnotation} from '../git'
+import {assertSafeGitRef, getTagAnnotation} from '../git'
 import * as exec from '@actions/exec'
 
 export class GiteaProvider extends BaseProvider {
@@ -92,6 +92,9 @@ export class GiteaProvider extends BaseProvider {
     repositoryPath: string,
     tagInfo: TagInfo
   ): Promise<TagInfo> {
+    // Outside the try on purpose: a refusal must not be downgraded to the warning below.
+    assertSafeGitRef(tagInfo.name, 'tag name')
+
     try {
       let output = ''
       await exec.exec(
@@ -126,6 +129,9 @@ export class GiteaProvider extends BaseProvider {
     base: string,
     head: string
   ): Promise<DiffInfo> {
+    assertSafeGitRef(base, 'base ref')
+    assertSafeGitRef(head, 'head ref')
+
     // Gitea API limitation: can't get diff via API easily, use git command
     // For now, return basic info and let the git helper handle the actual diff
     // This is a simplified version - in practice, you'd use git commands
@@ -321,6 +327,11 @@ export class GiteaProvider extends BaseProvider {
     base: string,
     head: string
   ): Promise<CommitInfo[]> {
+    // Outside the try on purpose: `${base}..${head}` becomes one argv entry, so a base
+    // beginning with "-" is read as an option by `git log`, not as a revision range.
+    assertSafeGitRef(base, 'base ref')
+    assertSafeGitRef(head, 'head ref')
+
     const commits: CommitInfo[] = []
 
     try {
