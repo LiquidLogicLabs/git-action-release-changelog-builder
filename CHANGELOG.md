@@ -1,3 +1,12 @@
+## [3.0.6](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.5...v3.0.6) (2026-09-04)
+
+
+### Bug Fixes
+
+* refuse tag names git would read as an option or a refspec ([26cfd51](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/26cfd511cee20b644306a711057375319a77439a))
+
+
+
 ## [3.0.5](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.4...v3.0.5) (2026-09-03)
 
 
