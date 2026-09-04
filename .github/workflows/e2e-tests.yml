@@ -57,8 +57,10 @@ jobs:
     # unbundled (e.g. tsc output instead of ncc), matching how consumers run the action.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
+          # No step in this job pushes; the credential is not needed.
+          persist-credentials: false
           fetch-depth: 0  # Full history for tag/commit range
 
       - name: Skip if test config missing
@@ -66,13 +68,19 @@ jobs:
           (matrix.scenario.repo_type == 'remote' && env.TEST_GITHUB_REPO == '') ||
           (matrix.scenario.fromTag_provided == true && env.TEST_GITHUB_FROM_TAG == '') ||
           (matrix.scenario.toTag_provided == true && env.TEST_GITHUB_TO_TAG == '')
+        env:
+          Z_MATRIX_SCENARIO_NAME: ${{ matrix.scenario.name }}
+          Z_MATRIX_SCENARIO_REPO_TYPE: ${{ matrix.scenario.repo_type }}
+          Z_TEST_GITHUB_REPO: ${{ env.TEST_GITHUB_REPO }}
+          Z_TEST_GITHUB_FROM_TAG: ${{ env.TEST_GITHUB_FROM_TAG }}
+          Z_TEST_GITHUB_TO_TAG: ${{ env.TEST_GITHUB_TO_TAG }}
         run: |
           echo "⚠️ Skipping E2E: missing required test configuration"
-          echo "Scenario: ${{ matrix.scenario.name }}"
-          echo "Repo Type: ${{ matrix.scenario.repo_type }}"
-          echo "Test Repo: ${{ env.TEST_GITHUB_REPO }}"
-          echo "FromTag: ${{ env.TEST_GITHUB_FROM_TAG }}"
-          echo "ToTag: ${{ env.TEST_GITHUB_TO_TAG }}"
+          echo "Scenario: ${Z_MATRIX_SCENARIO_NAME}"
+          echo "Repo Type: ${Z_MATRIX_SCENARIO_REPO_TYPE}"
+          echo "Test Repo: ${Z_TEST_GITHUB_REPO}"
+          echo "FromTag: ${Z_TEST_GITHUB_FROM_TAG}"
+          echo "ToTag: ${Z_TEST_GITHUB_TO_TAG}"
           exit 0
 
       - name: Run E2E test - ${{ matrix.scenario.name }}
@@ -80,7 +88,7 @@ jobs:
           (matrix.scenario.repo_type == 'local' || env.TEST_GITHUB_REPO != '') &&
           (matrix.scenario.fromTag_provided == false || env.TEST_GITHUB_FROM_TAG != '') &&
           (matrix.scenario.toTag_provided == false || env.TEST_GITHUB_TO_TAG != '')
-        uses: ./
+        uses: ./  # zizmor: ignore[self-repository] — local ACTION reference under test, not a reusable-workflow call; $/ does not apply
         with:
           platform: github
           repo: ${{ matrix.scenario.repo_type == 'local' && github.repository || env.TEST_GITHUB_REPO }}
