@@ -1,3 +1,12 @@
+## [3.0.8](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.7...v3.0.8) (2026-09-04)
+
+
+### Bug Fixes
+
+* **release:** stop publishing a live GITHUB_TOKEN in the release notes ([a0a20d9](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/a0a20d97a3daa76da23abd84835c3552dedf70bf))
+
+
+
 ## [3.0.7](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.6...v3.0.7) (2026-09-04)
 
 
