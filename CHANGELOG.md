@@ -1,3 +1,7 @@
+## [3.0.7](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.6...v3.0.7) (2026-09-04)
+
+
+
 ## [3.0.6](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.5...v3.0.6) (2026-09-04)
 
 
