@@ -122,9 +122,14 @@ jobs:
           # Usage block published to consumers on every release -- was silently
           # discarded. Surfaced by running actionlint over release.yml for the first
           # time (it had been pinned to ci.yml).
+          #
+          # GITHUB_TOKEN in the Usage snippet below is written `${{ '${{' }} ...` so
+          # Actions emits the literal text. Unescaped, the workflow expanded it and the
+          # published release body carried a live ephemeral installation token -- which
+          # is exactly what every release of this repository up to v3.0.7 did.
           configuration-json: |
             {
-              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Pull Requests</summary>\n\n#{{PR_LIST}}\n</details>\n\n---\n\n### Usage\n\n```yaml\n- uses: LiquidLogicLabs/git-action-release-changelog-builder@${{ github.ref_name }}\n  with:\n    platform: 'github'\n    from-tag: 'v1.0.0'\n    to-tag: 'v1.1.0'\n  env:\n    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\n```"
+              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Pull Requests</summary>\n\n#{{PR_LIST}}\n</details>\n\n---\n\n### Usage\n\n```yaml\n- uses: LiquidLogicLabs/git-action-release-changelog-builder@${{ github.ref_name }}\n  with:\n    platform: 'github'\n    from-tag: 'v1.0.0'\n    to-tag: 'v1.1.0'\n  env:\n    GITHUB_TOKEN: ${{ '${{' }} secrets.GITHUB_TOKEN }}\n```"
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
