@@ -116,7 +116,7 @@ jobs:
           # is exactly what every release of this repository up to v3.0.7 did.
           configuration-json: |
             {
-              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>Pull Requests</summary>\n\n#{{PR_LIST}}\n</details>\n\n---\n\n### Usage\n\n```yaml\n- uses: LiquidLogicLabs/git-action-release-changelog-builder@${{ github.ref_name }}\n  with:\n    platform: 'github'\n    from-tag: 'v1.0.0'\n    to-tag: 'v1.1.0'\n  env:\n    GITHUB_TOKEN: ${{ '${{' }} secrets.GITHUB_TOKEN }}\n```"
+              "template": "#{{CHANGELOG}}\n\n---\n\n### Usage\n\n```yaml\n- uses: LiquidLogicLabs/git-action-release-changelog-builder@${{ github.ref_name }}\n  with:\n    platform: 'github'\n    from-tag: 'v1.0.0'\n    to-tag: 'v1.1.0'\n  env:\n    GITHUB_TOKEN: ${{ '${{' }} secrets.GITHUB_TOKEN }}\n```"
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
