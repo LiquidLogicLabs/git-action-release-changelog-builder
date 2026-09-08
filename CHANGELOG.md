@@ -1,3 +1,9 @@
+## [3.0.9](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.8...v3.0.9) (2026-09-08)
+
+
+### Features
+
+* consume @liquidlogiclabs/git-platform-detector from npmjs ([5c3d9da](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/5c3d9da59a5b3cedc38533055fc515ea57c72b1a))
 ## [3.0.8](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.7...v3.0.8) (2026-09-04)
 
 
