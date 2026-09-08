@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as fs from 'fs'
 import * as path from 'path'
-import { createByName, detectPlatform as detectSharedPlatform, getBuiltInProviders } from 'git-platform-detector'
+import { createByName, detectPlatform as detectSharedPlatform, getBuiltInProviders } from '@liquidlogiclabs/git-platform-detector'
 import {ProviderPlatform} from './types'
 
 /**

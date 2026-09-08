@@ -38,7 +38,7 @@ exports.getApiBaseUrl = getApiBaseUrl;
 const core = __importStar(require("@actions/core"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const git_platform_detector_1 = require("git-platform-detector");
+const git_platform_detector_1 = require("@liquidlogiclabs/git-platform-detector");
 /**
  * Check if a path is a valid local git repository
  */
