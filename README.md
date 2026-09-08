@@ -1,4 +1,4 @@
-# Release Changelog Builder
+# Git Release Changelog Builder
 
 A GitHub/Gitea Action that builds release notes/changelog from pull requests and commits, supporting multiple providers (GitHub, Gitea) with tag annotations and prefix/postfix messages.
 
@@ -18,7 +18,7 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 
 ```yaml
 - name: Build Changelog
-  uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
+  uses: LiquidLogicLabs/git-action-release-changelog-builder@v3
   with:
     from-tag: v1.0.0
     to-tag: v1.1.0
@@ -30,7 +30,7 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 
 ```yaml
 - name: Build Changelog
-  uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
+  uses: LiquidLogicLabs/git-action-release-changelog-builder@v3
   with:
     platform: gitea
     from-tag: v1.0.0
@@ -43,7 +43,7 @@ A GitHub/Gitea Action that builds release notes/changelog from pull requests and
 
 ```yaml
 - name: Build Changelog
-  uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
+  uses: LiquidLogicLabs/git-action-release-changelog-builder@v3
   with:
     from-tag: v1.0.0
     to-tag: v1.1.0
@@ -225,7 +225,7 @@ jobs:
 
       - name: Build Changelog
         id: changelog
-        uses: LiquidLogicLabs/git-action-release-changelog-builder@v1
+        uses: LiquidLogicLabs/git-action-release-changelog-builder@v3
         with:
           fetch-tag-annotations: true
           prefix-message: |
