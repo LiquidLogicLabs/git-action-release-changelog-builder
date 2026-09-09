@@ -314,7 +314,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
-        uses: LiquidLogicLabs/git-action-release@v1
+        uses: LiquidLogicLabs/git-action-release@v2
         with:
           tag: ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changelog }}
