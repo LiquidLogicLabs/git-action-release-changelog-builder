@@ -116,7 +116,15 @@ jobs:
           # is exactly what every release of this repository up to v3.0.7 did.
           configuration-json: |
             {
-              "template": "#{{CHANGELOG}}\n\n---\n\n### Usage\n\n```yaml\n- uses: LiquidLogicLabs/git-action-release-changelog-builder@${{ github.ref_name }}\n  with:\n    platform: 'github'\n    from-tag: 'v1.0.0'\n    to-tag: 'v1.1.0'\n  env:\n    GITHUB_TOKEN: ${{ '${{' }} secrets.GITHUB_TOKEN }}\n```"
+              "template": "#{{CHANGELOG}}\n\n---\n\n### Usage\n\n```yaml\n- uses: LiquidLogicLabs/git-action-release-changelog-builder@${{ github.ref_name }}\n  with:\n    platform: 'github'\n    from-tag: 'v1.0.0'\n    to-tag: 'v1.1.0'\n  env:\n    GITHUB_TOKEN: ${{ '${{' }} secrets.GITHUB_TOKEN }}\n```",
+              "categories": [
+                  { "title": "## 🚀 Features",      "labels": [], "rules": [{ "pattern": "^feat(\\(.+\\))?!?:", "on_property": "title", "flags": "gu" }] },
+                  { "title": "## 🐛 Fixes",         "labels": [], "rules": [{ "pattern": "^fix(\\(.+\\))?!?:", "on_property": "title", "flags": "gu" }] },
+                  { "title": "## 📝 Documentation", "labels": [], "rules": [{ "pattern": "^docs(\\(.+\\))?!?:", "on_property": "title", "flags": "gu" }] },
+                  { "title": "## 🔧 CI & Build",    "labels": [], "rules": [{ "pattern": "^(ci|build)(\\(.+\\))?!?:", "on_property": "title", "flags": "gu" }] },
+                  { "title": "## 🧪 Tests",         "labels": [], "rules": [{ "pattern": "^test(\\(.+\\))?!?:", "on_property": "title", "flags": "gu" }] },
+                  { "title": "## 🧹 Maintenance",   "labels": [], "rules": [{ "pattern": "^(chore(?!\\(release\\))|refactor|style|perf)(\\(.+\\))?!?:", "on_property": "title", "flags": "gu" }] }
+                ]
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
