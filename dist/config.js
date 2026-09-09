@@ -196,6 +196,7 @@ function mergeWithDefaults(userConfig) {
         empty_template: userConfig.empty_template ?? exports.DefaultConfiguration.empty_template,
         categories: userConfig.categories ?? exports.DefaultConfiguration.categories,
         ignore_labels: userConfig.ignore_labels ?? exports.DefaultConfiguration.ignore_labels,
+        ignore_rules: userConfig.ignore_rules ?? exports.DefaultConfiguration.ignore_rules,
         trim_values: userConfig.trim_values ?? exports.DefaultConfiguration.trim_values,
         defaultCategory: userConfig.defaultCategory ?? exports.DefaultConfiguration.defaultCategory
     };

@@ -1,12 +1,46 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateChangelog = generateChangelog;
+const core = __importStar(require("@actions/core"));
 /**
  * Generate changelog from pull requests using configuration
  */
 function generateChangelog(pullRequests, config, tagAnnotation, prefixMessage, postfixMessage) {
     // Categorize pull requests
-    const categorized = categorizePullRequests(pullRequests, config.categories || [], config.ignore_labels || []);
+    const categorized = categorizePullRequests(pullRequests, config.categories || [], config.ignore_labels || [], config.ignore_rules || []);
     // Build changelog sections
     const sections = [];
     // Add prefix message if provided
@@ -26,7 +60,7 @@ function generateChangelog(pullRequests, config, tagAnnotation, prefixMessage, p
             sections.push(category.title);
             sections.push('');
             for (const pr of prs) {
-                const prLine = renderPullRequest(pr, config.pr_template || '- #{{TITLE}}');
+                const prLine = renderEntry(pr, config);
                 sections.push(prLine);
             }
             sections.push('');
@@ -38,7 +72,7 @@ function generateChangelog(pullRequests, config, tagAnnotation, prefixMessage, p
         sections.push(config.defaultCategory || '## Other Changes');
         sections.push('');
         for (const pr of uncategorized) {
-            const prLine = renderPullRequest(pr, config.pr_template || '- #{{TITLE}}');
+            const prLine = renderEntry(pr, config);
             sections.push(prLine);
         }
         sections.push('');
@@ -62,7 +96,7 @@ function generateChangelog(pullRequests, config, tagAnnotation, prefixMessage, p
 /**
  * Categorize pull requests based on configuration
  */
-function categorizePullRequests(prs, categories, ignoreLabels) {
+function categorizePullRequests(prs, categories, ignoreLabels, ignoreRules = []) {
     const categorized = new Map();
     const uncategorized = [];
     // Initialize category maps
@@ -72,7 +106,10 @@ function categorizePullRequests(prs, categories, ignoreLabels) {
     categorized.set('__uncategorized__', uncategorized);
     // Filter out ignored PRs
     const filteredPRs = prs.filter(pr => {
-        return !pr.labels.some(label => ignoreLabels.includes(label.toLowerCase()));
+        if (pr.labels.some(label => ignoreLabels.includes(label.toLowerCase()))) {
+            return false;
+        }
+        return !matchesAnyRule(pr, ignoreRules);
     });
     // Categorize each PR
     for (const pr of filteredPRs) {
@@ -96,13 +133,84 @@ function categorizePullRequests(prs, categories, ignoreLabels) {
  * Check if a PR matches a category
  */
 function matchesCategory(pr, category) {
-    if (!category.labels || category.labels.length === 0) {
+    const hasLabels = Boolean(category.labels && category.labels.length > 0);
+    const hasRules = Boolean(category.rules && category.rules.length > 0);
+    // A category declaring neither cannot match anything.
+    if (!hasLabels && !hasRules) {
         return false;
     }
-    const prLabels = pr.labels.map(l => l.toLowerCase());
-    const categoryLabels = category.labels.map(l => l.toLowerCase());
-    // Check if any label matches
-    return categoryLabels.some(label => prLabels.includes(label));
+    if (hasLabels) {
+        const prLabels = pr.labels.map(l => l.toLowerCase());
+        const categoryLabels = category.labels.map(l => l.toLowerCase());
+        if (categoryLabels.some(label => prLabels.includes(label))) {
+            return true;
+        }
+    }
+    return hasRules && matchesAnyRule(pr, category.rules);
+}
+/**
+ * The entry field a rule is matched against. Defaults to the title, which is
+ * what conventional-commit categorisation needs.
+ */
+function propertyValue(pr, property) {
+    switch (property) {
+        case 'body':
+            return pr.body || '';
+        case 'branch':
+            return pr.branch || '';
+        case 'baseBranch':
+            return pr.baseBranch || '';
+        case 'author':
+            return pr.author || '';
+        case 'milestone':
+            return pr.milestone || '';
+        case 'status':
+            return pr.status || '';
+        case 'title':
+        default:
+            return pr.title || '';
+    }
+}
+/**
+ * True when ANY rule matches the entry.
+ *
+ * Each rule is compiled per call rather than cached, and `g`/`y` are stripped
+ * from the flags: those make a RegExp stateful through lastIndex, so a shared
+ * instance would match only every other entry. An unparseable pattern is
+ * warned about and treated as "no match" -- one bad pattern in a user's
+ * configuration must not abort a release.
+ */
+function matchesAnyRule(pr, rules) {
+    if (!rules || rules.length === 0) {
+        return false;
+    }
+    return rules.some(rule => {
+        if (!rule || typeof rule.pattern !== 'string' || rule.pattern.length === 0) {
+            return false;
+        }
+        const flags = (rule.flags || '').replace(/[gy]/g, '');
+        let expression;
+        try {
+            expression = new RegExp(rule.pattern, flags);
+        }
+        catch (error) {
+            core.warning(`Ignoring invalid category rule /${rule.pattern}/${flags}: ${error instanceof Error ? error.message : String(error)}`);
+            return false;
+        }
+        return expression.test(propertyValue(pr, rule.on_property));
+    });
+}
+/**
+ * Render one entry.
+ *
+ * An entry collected from a commit rather than a pull request carries
+ * `number: 0`. Rendering those with `pr_template` printed a bogus "PR: #0"
+ * beneath every line -- and `commit_template`, though parsed from the
+ * configuration, was never used anywhere. This is where it gets used.
+ */
+function renderEntry(pr, config) {
+    const template = pr.number > 0 ? config.pr_template || '- #{{TITLE}}' : config.commit_template || '- #{{TITLE}}';
+    return renderPullRequest(pr, template);
 }
 /**
  * Render a pull request using template

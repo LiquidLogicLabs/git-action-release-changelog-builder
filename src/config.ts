@@ -184,6 +184,7 @@ function mergeWithDefaults(userConfig: Partial<Configuration>): Configuration {
     empty_template: userConfig.empty_template ?? DefaultConfiguration.empty_template,
     categories: userConfig.categories ?? DefaultConfiguration.categories,
     ignore_labels: userConfig.ignore_labels ?? DefaultConfiguration.ignore_labels,
+    ignore_rules: userConfig.ignore_rules ?? DefaultConfiguration.ignore_rules,
     trim_values: userConfig.trim_values ?? DefaultConfiguration.trim_values,
     defaultCategory: userConfig.defaultCategory ?? DefaultConfiguration.defaultCategory
   }

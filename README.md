@@ -138,6 +138,60 @@ You can configure the changelog format using a JSON configuration file or inline
 - `commit_template`: Template for commit entries (COMMIT/HYBRID mode)
 - `categories`: Array of category definitions
 - `ignore_labels`: Labels to exclude from changelog
+- `ignore_rules`: Regex rules; a matching entry is dropped from the changelog entirely
+
+### Categorising by commit message
+
+A category matches an entry by **label** or by **rule**. Labels only work when
+your entries are pull requests that carry labels; if you commit straight to the
+default branch, or your forge does not label PRs, use rules instead:
+
+```json
+{
+  "commit_template": "- #{{TITLE}}",
+  "categories": [
+    {
+      "title": "## 🚀 Features",
+      "labels": [],
+      "rules": [{ "pattern": "^feat(\\(.+\\))?!?:", "on_property": "title", "flags": "gu" }]
+    },
+    {
+      "title": "## 🐛 Fixes",
+      "labels": [],
+      "rules": [{ "pattern": "^fix(\\(.+\\))?!?:", "on_property": "title", "flags": "gu" }]
+    }
+  ],
+  "ignore_rules": [
+    { "pattern": "^chore\\(release\\):", "on_property": "title", "flags": "gu" }
+  ]
+}
+```
+
+Each rule takes:
+
+- `pattern` — the regular expression source. Remember this is JSON, so a
+  backslash must be doubled: `\\(` matches a literal `(`.
+- `on_property` — which field to test: `title` (default), `body`, `branch`,
+  `baseBranch`, `author`, `milestone` or `status`.
+- `flags` — regex flags. `g` and `y` are stripped, because they make a regular
+  expression stateful and it would then match only every other entry.
+
+An entry joins a category if **any** of its rules matches, or if any of its
+labels matches. A category with neither `labels` nor `rules` never matches.
+An unparseable `pattern` is reported as a warning and treated as no match,
+rather than failing the release.
+
+This schema is the one used by
+[mikepenz/release-changelog-builder-action](https://github.com/mikepenz/release-changelog-builder-action),
+so a configuration is portable between the two. That action is GitHub-only,
+which is the reason this one implements the same shape: the same config then
+produces the same categories on Gitea.
+
+### Commits vs pull requests
+
+An entry collected from a commit has no PR number, and is rendered with
+`commit_template`. Entries that are real pull requests use `pr_template`. Keep
+`#{{NUMBER}}` out of `commit_template` — there is no number to print.
 
 ### Template Placeholders
 
