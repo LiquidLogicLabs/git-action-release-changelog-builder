@@ -1,3 +1,9 @@
+## [3.0.14](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.13...v3.0.14) (2026-09-09)
+
+
+### Features
+
+* accept upstream's input and output names ([5a8d469](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/5a8d46960427ea86e26bc61200a918b53b570ed7))
 ## [3.0.13](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.12...v3.0.13) (2026-09-09)
 
 
