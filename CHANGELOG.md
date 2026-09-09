@@ -1,3 +1,9 @@
+## [3.0.12](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.11...v3.0.12) (2026-09-09)
+
+
+### Features
+
+* **changelog:** categorise entries by regex rules, not labels alone ([209e1f2](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/209e1f237f09ebfc4bf5db0deeeff254c71f8fcc))
 ## [3.0.11](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.10...v3.0.11) (2026-09-09)
 
 
