@@ -139,6 +139,22 @@ You can configure the changelog format using a JSON configuration file or inline
 - `categories`: Array of category definitions
 - `ignore_labels`: Labels to exclude from changelog
 - `ignore_rules`: Regex rules; a matching entry is dropped from the changelog entirely
+- `defaultCategory`: Heading for entries that matched no category. Set it to `""` to drop them instead
+
+### Uncategorised entries
+
+An entry that matches no category is, by default, appended under
+`defaultCategory` (`## Other Changes`), so nothing is silently lost. Two ways
+to change that:
+
+- put `#{{UNCATEGORIZED}}` in your `template` — the entries render there
+  instead of being appended, which is how
+  `mikepenz/release-changelog-builder-action` behaves;
+- set `"defaultCategory": ""` — the entries are dropped.
+
+Note the difference when migrating from upstream: a template with no
+`#{{UNCATEGORIZED}}` placeholder drops uncategorised entries there, whereas
+here they appear under `## Other Changes` unless you ask otherwise.
 
 ### Categorising by commit message
 

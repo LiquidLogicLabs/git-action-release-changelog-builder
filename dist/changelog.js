@@ -66,15 +66,23 @@ function generateChangelog(pullRequests, config, tagAnnotation, prefixMessage, p
             sections.push('');
         }
     }
-    // Handle uncategorized PRs
+    // Handle uncategorized entries.
+    //
+    // Three behaviours, because upstream and this action historically differed
+    // and a portable configuration has to be able to ask for either:
+    //   - template contains #{{UNCATEGORIZED}} -> render them there, not here
+    //     (this is upstream's behaviour)
+    //   - defaultCategory is explicitly ''      -> drop them
+    //   - otherwise                             -> append under defaultCategory,
+    //     so nothing is silently lost (this action's original behaviour)
     const uncategorized = categorized.get('__uncategorized__') || [];
-    if (uncategorized.length > 0) {
-        sections.push(config.defaultCategory || '## Other Changes');
+    const uncategorizedBody = uncategorized.length > 0 ? uncategorized.map(pr => renderEntry(pr, config)).join('\n') : '';
+    const templateWantsUncategorized = Boolean(config.template && config.template.includes('#{{UNCATEGORIZED}}'));
+    const defaultCategoryTitle = config.defaultCategory === undefined ? '## Other Changes' : config.defaultCategory;
+    if (uncategorized.length > 0 && !templateWantsUncategorized && defaultCategoryTitle !== '') {
+        sections.push(defaultCategoryTitle);
         sections.push('');
-        for (const pr of uncategorized) {
-            const prLine = renderEntry(pr, config);
-            sections.push(prLine);
-        }
+        sections.push(uncategorizedBody);
         sections.push('');
     }
     // Build main changelog content
@@ -85,7 +93,7 @@ function generateChangelog(pullRequests, config, tagAnnotation, prefixMessage, p
     }
     // Apply template if provided
     if (config.template) {
-        changelog = applyTemplate(config.template, changelog, pullRequests);
+        changelog = applyTemplate(config.template, changelog, pullRequests, uncategorizedBody);
     }
     // Add postfix message if provided
     if (postfixMessage) {
@@ -236,10 +244,12 @@ function renderPullRequest(pr, template) {
 /**
  * Apply main template with placeholders
  */
-function applyTemplate(template, changelog, prs) {
+function applyTemplate(template, changelog, prs, uncategorized = '') {
     let result = template;
     // Replace main changelog placeholder
     result = result.replace(/#\{\{CHANGELOG\}\}/g, changelog);
+    // Replace the uncategorized placeholder (upstream-compatible)
+    result = result.replace(/#\{\{UNCATEGORIZED\}\}/g, uncategorized);
     // Replace PR list placeholder
     const prList = prs.map(pr => `- #${pr.number}: ${pr.title}`).join('\n');
     result = result.replace(/#\{\{PR_LIST\}\}/g, prList);

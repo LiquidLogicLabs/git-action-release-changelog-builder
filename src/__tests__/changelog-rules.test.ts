@@ -207,3 +207,61 @@ describe('configuration parsing carries the new fields through', () => {
     expect(cfg.ignore_rules?.[0]?.pattern).toBe('^chore\\(release\\):')
   })
 })
+
+/**
+ * Uncategorised entries.
+ *
+ * Upstream renders them only where `#{{UNCATEGORIZED}}` appears in the
+ * template, so a template without it drops them. This action appends them
+ * under `defaultCategory` instead. Both behaviours are useful -- appending
+ * means nothing is silently lost -- but a config has to be able to ask for
+ * either, or configurations are not actually portable between the two.
+ */
+describe('uncategorised entries', () => {
+  const e = (title: string): PullRequestInfo => ({
+    number: 0, title, htmlURL: '', baseBranch: 'main', branch: '',
+    createdAt: moment(), mergedAt: moment(), mergeCommitSha: 'a', author: 'x', authorName: 'X',
+    repoName: 'r', labels: [], milestone: '', body: '', assignees: [],
+    requestedReviewers: [], approvedReviewers: [], status: 'merged'
+  })
+
+  const cfg = (over: Partial<Configuration> = {}): Configuration => ({
+    template: '#{{CHANGELOG}}',
+    commit_template: '- #{{TITLE}}',
+    categories: [{title: '## Features', labels: [], rules: [{pattern: '^feat', on_property: 'title'}]}],
+    ignore_labels: [],
+    defaultCategory: '## Other Changes',
+    ...over
+  })
+
+  it('appends them under defaultCategory by default', () => {
+    const result = generateChangelog([e('feat: a'), e('something unlabelled')], cfg())
+    expect(result).toContain('## Other Changes')
+    expect(result).toContain('something unlabelled')
+  })
+
+  it('an explicit empty defaultCategory suppresses the section', () => {
+    const result = generateChangelog([e('feat: a'), e('something unlabelled')], cfg({defaultCategory: ''}))
+    expect(result).toContain('feat: a')
+    expect(result).not.toContain('## Other Changes')
+    expect(result).not.toContain('something unlabelled')
+  })
+
+  it('renders them at #{{UNCATEGORIZED}} instead of appending, when the template asks', () => {
+    const result = generateChangelog(
+      [e('feat: a'), e('something unlabelled')],
+      cfg({template: '#{{CHANGELOG}}\n\n## Leftovers\n\n#{{UNCATEGORIZED}}'})
+    )
+    expect(result).toContain('## Leftovers')
+    expect(result).toContain('something unlabelled')
+    // must NOT also be appended into the categorised body
+    expect(result).not.toContain('## Other Changes')
+    expect(result.match(/something unlabelled/g)).toHaveLength(1)
+  })
+
+  it('leaves the placeholder empty when everything was categorised', () => {
+    const result = generateChangelog([e('feat: a')], cfg({template: '#{{CHANGELOG}}\n\nLEFT:#{{UNCATEGORIZED}}'}))
+    expect(result).toContain('LEFT:')
+    expect(result).not.toContain('#{{UNCATEGORIZED}}')
+  })
+})
