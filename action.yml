@@ -1,5 +1,5 @@
 name: 'Git Release Changelog Builder'
-description: 'A GitHub/Gitea action that builds release notes/changelog from PRs and commits, supporting multiple providers (GitHub, Gitea) with tag annotations and prefix/postfix messages'
+description: 'Build release notes from commits and PRs on GitHub or Gitea, with tag annotations and custom prefix/postfix text.'
 author: 'ravenwolf.org'
 branding:
   icon: 'award'
