@@ -10,6 +10,7 @@ import {resolveTags} from './tags'
 import {collectPullRequests} from './collector'
 import {Logger} from './logger'
 import {Configuration} from './types'
+import {setOutput} from './outputs'
 
 /**
  * Main entry point for the action
@@ -34,7 +35,7 @@ export async function run(): Promise<void> {
       setGlobalDispatcher(new Agent({ connect: { rejectUnauthorized: false } }))
     }
 
-    core.setOutput('failed', 'false')
+    setOutput('failed', 'false')
 
     const platformInput = inputs.platform
     const tokenInput = inputs.token
@@ -102,7 +103,7 @@ export async function run(): Promise<void> {
       if (tagAnnotation) {
         logger.info(`ℹ️ Retrieved tag annotation for ${toTag.name}`)
         logger.debug(`Tag annotation: ${tagAnnotation.substring(0, 100)}...`)
-        core.setOutput('tag-annotation', tagAnnotation)
+        setOutput('tag-annotation', tagAnnotation)
       }
     }
 
@@ -132,27 +133,27 @@ export async function run(): Promise<void> {
     )
 
     // Set outputs
-    core.setOutput('changelog', changelog)
-    core.setOutput('owner', owner)
-    core.setOutput('repo', repo)
-    core.setOutput('from-tag', fromTag.name)
-    core.setOutput('to-tag', toTag.name)
+    setOutput('changelog', changelog)
+    setOutput('owner', owner)
+    setOutput('repo', repo)
+    setOutput('from-tag', fromTag.name)
+    setOutput('to-tag', toTag.name)
 
     // Contributors
     const contributors = Array.from(new Set(pullRequests.map(pr => pr.author))).join(', ')
-    core.setOutput('contributors', contributors)
+    setOutput('contributors', contributors)
 
     // PR numbers
     const prNumbers = pullRequests
       .filter(pr => pr.number > 0)
       .map(pr => pr.number)
       .join(', ')
-    core.setOutput('pull-requests', prNumbers)
+    setOutput('pull-requests', prNumbers)
 
     logger.info('✅ Changelog generated successfully')
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    core.setOutput('failed', 'true')
+    setOutput('failed', 'true')
     
     // Create logger even in error case (may not have been created if error occurred early)
     const safeInputs = resolvedInputs ?? (() => {
@@ -185,17 +186,17 @@ export async function run(): Promise<void> {
         resolvedPostfixMessage
       )
 
-      core.setOutput('changelog', fallbackChangelog)
+      setOutput('changelog', fallbackChangelog)
       // These may be unknown in error cases; emit empty values instead of omitting.
-      core.setOutput('owner', '')
-      core.setOutput('repo', '')
-      core.setOutput('from-tag', '')
-      core.setOutput('to-tag', '')
-      core.setOutput('contributors', '')
-      core.setOutput('pull-requests', '')
+      setOutput('owner', '')
+      setOutput('repo', '')
+      setOutput('from-tag', '')
+      setOutput('to-tag', '')
+      setOutput('contributors', '')
+      setOutput('pull-requests', '')
     } catch {
       // If even fallback generation fails, ensure at least changelog is set.
-      core.setOutput('changelog', `⚠️ Changelog generation failed: ${errorMessage}`)
+      setOutput('changelog', `⚠️ Changelog generation failed: ${errorMessage}`)
     }
 
     if (failOnError) {

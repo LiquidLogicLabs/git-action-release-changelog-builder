@@ -74,6 +74,25 @@ inputs:
     description: 'Maximum number of tags to fetch when searching for tags. If a specified tag is not found in the initial batch, more tags will be fetched up to this limit. Defaults to 1000.'
     required: false
     default: '1000'
+  configurationJson:
+    description: 'Compatibility alias for `configuration-json` (mikepenz/release-changelog-builder-action naming). Prefer `configuration-json`; this is accepted so an existing workflow can move across unchanged.'
+    required: false
+  failOnError:
+    description: 'Compatibility alias for `fail-on-error` (mikepenz/release-changelog-builder-action naming). Prefer `fail-on-error`; this is accepted so an existing workflow can move across unchanged.'
+    required: false
+  fromTag:
+    description: 'Compatibility alias for `from-tag` (mikepenz/release-changelog-builder-action naming). Prefer `from-tag`; this is accepted so an existing workflow can move across unchanged.'
+    required: false
+  ignorePreReleases:
+    description: 'Compatibility alias for `ignore-pre-releases` (mikepenz/release-changelog-builder-action naming). Prefer `ignore-pre-releases`; this is accepted so an existing workflow can move across unchanged.'
+    required: false
+  includeOpen:
+    description: 'Compatibility alias for `include-open` (mikepenz/release-changelog-builder-action naming). Prefer `include-open`; this is accepted so an existing workflow can move across unchanged.'
+    required: false
+  toTag:
+    description: 'Compatibility alias for `to-tag` (mikepenz/release-changelog-builder-action naming). Prefer `to-tag`; this is accepted so an existing workflow can move across unchanged.'
+    required: false
+
 outputs:
   changelog:
     description: The built release changelog built from the merged pull requests

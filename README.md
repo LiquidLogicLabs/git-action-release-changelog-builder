@@ -321,6 +321,58 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+## Moving from mikepenz/release-changelog-builder-action
+
+This action accepts that action's input and output names, so a workflow can
+change only its `uses:` line. That matters because the upstream action is
+GitHub-only: on Gitea this one is the only option, and the same workflow should
+work in both places.
+
+**It is not a drop-in replacement.** Fourteen upstream inputs are not
+implemented here, listed below. A workflow using any of them keeps running but
+silently loses that behaviour, so check the list before switching.
+
+### Input names accepted
+
+| upstream | canonical here |
+| -------- | -------------- |
+| `configurationJson` | `configuration-json` |
+| `failOnError` | `fail-on-error` |
+| `fromTag` | `from-tag` |
+| `ignorePreReleases` | `ignore-pre-releases` |
+| `includeOpen` | `include-open` |
+| `toTag` | `to-tag` |
+
+Using an alias logs a warning naming the canonical input. Setting both a
+canonical name and its alias to **different** values is an error rather than a
+silent preference — picking one quietly is the bug this compatibility exists to
+remove.
+
+### Output names published
+
+Every output is published under its canonical name, and these are published
+under upstream's spelling as well:
+
+| canonical here | also published as |
+| -------------- | ----------------- |
+| `from-tag` | `fromTag` |
+| `to-tag` | `toTag` |
+| `pull-requests` | `pull_requests` |
+
+`changelog`, `owner`, `repo`, `contributors` and `failed` already share their
+names with upstream.
+
+### Not implemented
+
+`baseUrl`, `cache`, `commitMode`, `exportCache`, `exportOnly`,
+`fetchReleaseInformation`, `fetchReviewers`, `fetchReviews`, `fetchViaCommits`,
+`includeOnlyPaths`, `offlineMode`, `outputFile`, `owner`, `path`.
+
+Upstream also publishes `cache`, `categorized_prs`, `open_prs` and
+`uncategorized_prs`, which this action does not produce. Reading one of those
+yields an empty string, not an error — so a step that depends on it will do
+nothing rather than fail.
+
 ## Credits
 
 This action is inspired by and extends [mikepenz/release-changelog-builder-action](https://github.com/mikepenz/release-changelog-builder-action) by [Mike Penz](https://github.com/mikepenz).
