@@ -1,3 +1,9 @@
+## [3.0.13](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.12...v3.0.13) (2026-09-09)
+
+
+### Features
+
+* **changelog:** make uncategorised handling configurable and upstream-compatible ([e82b80c](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/e82b80c7d11d6e74eb8b86690e1405f03bf2c443))
 ## [3.0.12](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.11...v3.0.12) (2026-09-09)
 
 
