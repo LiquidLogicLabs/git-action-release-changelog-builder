@@ -1,3 +1,11 @@
+## [3.0.11](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.10...v3.0.11) (2026-09-09)
+
+
+### Bug Fixes
+
+* **release-notes:** categorise revert commits under Maintenance ([3d3babf](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/3d3babfe2ea20714305c31e2e9aabb1932e95fb3))
+* **release-notes:** categorise the changelog by conventional-commit type ([5c3b825](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/5c3b8253e6e62e49063120af35614d3041c4a903))
+* **release-notes:** drop the dead PR_LIST placeholder ([94fb8a0](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/94fb8a0b158916221d54242d6b59dfac4d73a952))
 ## [3.0.10](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.9...v3.0.10) (2026-09-08)
 ## [3.0.9](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.8...v3.0.9) (2026-09-08)
 
