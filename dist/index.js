@@ -73880,6 +73880,32 @@ function parseRepo(repoInput) {
 
 /***/ }),
 
+/***/ 3916:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.describeError = describeError;
+/**
+ * Turn a thrown value into a readable message. gitea-js rejects with the fetch Response
+ * itself (with the parsed API body as `.error`), which String() renders as "[object Response]".
+ */
+function describeError(error) {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    if (error instanceof Response) {
+        const apiMessage = error.error?.message;
+        const status = `HTTP ${error.status}${error.statusText ? ` ${error.statusText}` : ''} from ${error.url}`;
+        return apiMessage ? `${status}: ${apiMessage}` : status;
+    }
+    return String(error);
+}
+
+
+/***/ }),
+
 /***/ 1243:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -74157,6 +74183,7 @@ const core = __importStar(__nccwpck_require__(7484));
 const undici_1 = __nccwpck_require__(6752);
 const factory_1 = __nccwpck_require__(8016);
 const platform_1 = __nccwpck_require__(3728);
+const errors_1 = __nccwpck_require__(3916);
 const config_1 = __nccwpck_require__(2973);
 const changelog_1 = __nccwpck_require__(8397);
 const context_1 = __nccwpck_require__(788);
@@ -74258,7 +74285,7 @@ async function run() {
         logger.info('✅ Changelog generated successfully');
     }
     catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage = (0, errors_1.describeError)(error);
         (0, outputs_1.setOutput)('failed', 'true');
         // Create logger even in error case (may not have been created if error occurred early)
         const safeInputs = resolvedInputs ?? (() => {
@@ -74589,7 +74616,10 @@ function getApiBaseUrl(platform, inputBaseUrl) {
     }
     switch (platform) {
         case 'gitea':
-            return process.env.GITEA_SERVER_URL || 'https://gitea.com';
+            // The Gitea runner names its instance only in GITHUB_SERVER_URL.
+            return (process.env.GITEA_SERVER_URL ||
+                ((0, git_platform_detector_1.isGiteaActionsEnvironment)(process.env) ? process.env.GITHUB_SERVER_URL : undefined) ||
+                'https://gitea.com');
         case 'github':
             return process.env.GITHUB_API_URL || process.env.GITHUB_SERVER_URL || 'https://api.github.com';
         case 'local':
@@ -75029,6 +75059,7 @@ const core = __importStar(__nccwpck_require__(7484));
 const moment_1 = __importDefault(__nccwpck_require__(3350));
 const git_1 = __nccwpck_require__(1243);
 const exec = __importStar(__nccwpck_require__(5236));
+const errors_1 = __nccwpck_require__(3916);
 class GiteaProvider extends base_1.BaseProvider {
     api;
     get defaultUrl() {
@@ -75152,7 +75183,7 @@ class GiteaProvider extends base_1.BaseProvider {
             }
         }
         catch (error) {
-            core.warning(`Failed to get diff stats: ${error}`);
+            core.warning(`Failed to get diff stats: ${(0, errors_1.describeError)(error)}`);
         }
         return {
             changedFiles,
@@ -75195,7 +75226,7 @@ class GiteaProvider extends base_1.BaseProvider {
             }
         }
         catch (error) {
-            core.warning(`Failed to get PRs for commit ${commitSha}: ${error}`);
+            core.warning(`Failed to get PRs for commit ${commitSha}: ${(0, errors_1.describeError)(error)}`);
         }
         return prs;
     }
@@ -75295,7 +75326,7 @@ class GiteaProvider extends base_1.BaseProvider {
             }
         }
         catch (error) {
-            core.warning(`Failed to get commits: ${error}`);
+            core.warning(`Failed to get commits: ${(0, errors_1.describeError)(error)}`);
         }
         return commits;
     }
@@ -75848,8 +75879,14 @@ async function resolveTags(provider, owner, repo, repositoryPath, fromTagInput, 
     if (!fromTag) {
         const toTagIndex = allTags.findIndex((t) => t.name === toTag.name);
         if (toTagIndex >= 0 && toTagIndex < allTags.length - 1) {
-            // Tags are sorted newest first, so the previous tag is at index + 1
-            fromTag = allTags[toTagIndex + 1];
+            // Tags are sorted newest first, so the previous tag is at index + 1. Tags on toTag's own
+            // commit (floating v3 / v3.7 tags moved onto the release) would give an empty changelog,
+            // so take the first earlier tag on a different commit when there is one.
+            const toSha = allTags[toTagIndex].sha;
+            const differentCommit = toSha
+                ? allTags.slice(toTagIndex + 1).find((t) => t.sha && t.sha !== toSha)
+                : undefined;
+            fromTag = differentCommit ?? allTags[toTagIndex + 1];
             fromTag = await provider.fillTagInformation(repositoryPath, owner, repo, fromTag);
             logger.info(`✓ Auto-detected fromTag (previous): ${fromTag.name}`);
         }

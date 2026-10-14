@@ -5,6 +5,7 @@ import * as core from '@actions/core'
 import moment from 'moment'
 import {assertSafeGitRef, getTagAnnotation} from '../git'
 import * as exec from '@actions/exec'
+import {describeError} from '../errors'
 
 export class GiteaProvider extends BaseProvider {
   private api: Api<unknown>
@@ -174,7 +175,7 @@ export class GiteaProvider extends BaseProvider {
         }
       }
     } catch (error) {
-      core.warning(`Failed to get diff stats: ${error}`)
+      core.warning(`Failed to get diff stats: ${describeError(error)}`)
     }
 
     return {
@@ -230,7 +231,7 @@ export class GiteaProvider extends BaseProvider {
         page++
       }
     } catch (error) {
-      core.warning(`Failed to get PRs for commit ${commitSha}: ${error}`)
+      core.warning(`Failed to get PRs for commit ${commitSha}: ${describeError(error)}`)
     }
 
     return prs
@@ -370,7 +371,7 @@ export class GiteaProvider extends BaseProvider {
         }
       }
     } catch (error) {
-      core.warning(`Failed to get commits: ${error}`)
+      core.warning(`Failed to get commits: ${describeError(error)}`)
     }
 
     return commits

@@ -12,6 +12,7 @@ describe('platform detection', () => {
     delete cleanedEnv.GITHUB_ACTIONS
     delete cleanedEnv.GITHUB_TOKEN
     delete cleanedEnv.GITEA_SERVER_URL
+    delete cleanedEnv.GITEA_ACTIONS
     delete cleanedEnv.GITEA_REPOSITORY
     delete cleanedEnv.GITEA_TOKEN
     delete cleanedEnv.GITHUB_WORKSPACE
@@ -61,6 +62,28 @@ describe('platform detection', () => {
   it('should get correct API base URL for Gitea', () => {
     const url = getApiBaseUrl('gitea')
     expect(url).toBe('https://gitea.com')
+  })
+
+  // The Gitea runner sets GITHUB_SERVER_URL to the instance and GITEA_ACTIONS=true, but not
+  // GITEA_SERVER_URL; without this the API calls went to gitea.com and failed with 401.
+  it('should use the instance URL for Gitea under Gitea Actions', () => {
+    process.env = {...process.env, GITEA_ACTIONS: 'true', GITHUB_SERVER_URL: 'https://git.example.org'}
+    expect(getApiBaseUrl('gitea')).toBe('https://git.example.org')
+  })
+
+  it('should prefer GITEA_SERVER_URL over the runner instance URL', () => {
+    process.env = {
+      ...process.env,
+      GITEA_ACTIONS: 'true',
+      GITHUB_SERVER_URL: 'https://git.example.org',
+      GITEA_SERVER_URL: 'https://gitea.example.net'
+    }
+    expect(getApiBaseUrl('gitea')).toBe('https://gitea.example.net')
+  })
+
+  it('should not take a GitHub server URL as the Gitea instance', () => {
+    process.env = {...process.env, GITHUB_ACTIONS: 'true', GITHUB_SERVER_URL: 'https://github.com'}
+    expect(getApiBaseUrl('gitea')).toBe('https://gitea.com')
   })
 })
 

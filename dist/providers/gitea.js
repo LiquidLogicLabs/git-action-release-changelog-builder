@@ -43,6 +43,7 @@ const core = __importStar(require("@actions/core"));
 const moment_1 = __importDefault(require("moment"));
 const git_1 = require("../git");
 const exec = __importStar(require("@actions/exec"));
+const errors_1 = require("../errors");
 class GiteaProvider extends base_1.BaseProvider {
     api;
     get defaultUrl() {
@@ -166,7 +167,7 @@ class GiteaProvider extends base_1.BaseProvider {
             }
         }
         catch (error) {
-            core.warning(`Failed to get diff stats: ${error}`);
+            core.warning(`Failed to get diff stats: ${(0, errors_1.describeError)(error)}`);
         }
         return {
             changedFiles,
@@ -209,7 +210,7 @@ class GiteaProvider extends base_1.BaseProvider {
             }
         }
         catch (error) {
-            core.warning(`Failed to get PRs for commit ${commitSha}: ${error}`);
+            core.warning(`Failed to get PRs for commit ${commitSha}: ${(0, errors_1.describeError)(error)}`);
         }
         return prs;
     }
@@ -309,7 +310,7 @@ class GiteaProvider extends base_1.BaseProvider {
             }
         }
         catch (error) {
-            core.warning(`Failed to get commits: ${error}`);
+            core.warning(`Failed to get commits: ${(0, errors_1.describeError)(error)}`);
         }
         return commits;
     }

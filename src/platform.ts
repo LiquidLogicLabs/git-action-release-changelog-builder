@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as fs from 'fs'
 import * as path from 'path'
-import { createByName, detectPlatform as detectSharedPlatform, getBuiltInProviders } from '@liquidlogiclabs/git-platform-detector'
+import { createByName, detectPlatform as detectSharedPlatform, getBuiltInProviders, isGiteaActionsEnvironment } from '@liquidlogiclabs/git-platform-detector'
 import {ProviderPlatform} from './types'
 
 /**
@@ -71,7 +71,12 @@ export function getApiBaseUrl(platform: ProviderPlatform, inputBaseUrl?: string)
 
   switch (platform) {
     case 'gitea':
-      return process.env.GITEA_SERVER_URL || 'https://gitea.com'
+      // The Gitea runner names its instance only in GITHUB_SERVER_URL.
+      return (
+        process.env.GITEA_SERVER_URL ||
+        (isGiteaActionsEnvironment(process.env) ? process.env.GITHUB_SERVER_URL : undefined) ||
+        'https://gitea.com'
+      )
     case 'github':
       return process.env.GITHUB_API_URL || process.env.GITHUB_SERVER_URL || 'https://api.github.com'
     case 'local':

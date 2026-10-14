@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import { Agent, setGlobalDispatcher } from 'undici'
 import {createProvider} from './providers/factory'
 import {detectPlatform, getApiBaseUrl} from './platform'
+import {describeError} from './errors'
 import { getInputs, resolveConfiguration, resolveVerbose, resolveDebugMode, ParsedInputs } from './config'
 import {generateChangelog} from './changelog'
 import {detectOwnerRepo} from './context'
@@ -152,7 +153,7 @@ export async function run(): Promise<void> {
 
     logger.info('✅ Changelog generated successfully')
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorMessage = describeError(error)
     setOutput('failed', 'true')
     
     // Create logger even in error case (may not have been created if error occurred early)

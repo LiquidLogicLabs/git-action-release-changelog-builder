@@ -99,7 +99,10 @@ function getApiBaseUrl(platform, inputBaseUrl) {
     }
     switch (platform) {
         case 'gitea':
-            return process.env.GITEA_SERVER_URL || 'https://gitea.com';
+            // The Gitea runner names its instance only in GITHUB_SERVER_URL.
+            return (process.env.GITEA_SERVER_URL ||
+                ((0, git_platform_detector_1.isGiteaActionsEnvironment)(process.env) ? process.env.GITHUB_SERVER_URL : undefined) ||
+                'https://gitea.com');
         case 'github':
             return process.env.GITHUB_API_URL || process.env.GITHUB_SERVER_URL || 'https://api.github.com';
         case 'local':

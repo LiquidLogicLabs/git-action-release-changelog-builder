@@ -185,6 +185,51 @@ describe('resolveTags', () => {
       expect(fromTag.name).toBe('v2.0.0')
     })
 
+    // Floating tags (v3, v3.7) are moved onto each release commit after the release tag, so
+    // they sit next to it in the list; comparing against one of them gives an empty changelog.
+    it('skips tags on the same commit as toTag', async () => {
+      const tags: TagInfo[] = [
+        {name: 'v3.7.14', sha: 'a', date: undefined},
+        {name: 'v3', sha: 'a', date: undefined},
+        {name: 'v3.7', sha: 'a', date: undefined},
+        {name: 'v3.7.13', sha: 'b', date: undefined},
+        {name: 'v3.7.12', sha: 'c', date: undefined}
+      ]
+      const {fromTag} = await resolveTags(new MockProvider(tags), owner, repo, repoPath, undefined, 'v3.7.14', 'gitea', logger, 1000)
+      expect(fromTag.name).toBe('v3.7.13')
+    })
+
+    it('keeps the immediate predecessor when every earlier tag is on the same commit', async () => {
+      const tags: TagInfo[] = [
+        {name: 'v1.0.1', sha: 'a', date: undefined},
+        {name: 'v1', sha: 'a', date: undefined},
+        {name: 'v1.0.0', sha: 'a', date: undefined}
+      ]
+      const {fromTag} = await resolveTags(new MockProvider(tags), owner, repo, repoPath, undefined, 'v1.0.1', 'gitea', logger, 1000)
+      expect(fromTag.name).toBe('v1')
+    })
+
+    it('does not skip tags whose commit is unknown', async () => {
+      const tags: TagInfo[] = [
+        {name: 'v2.0.0', sha: '', date: undefined},
+        {name: 'v1.0.0', sha: '', date: undefined}
+      ]
+      const {fromTag} = await resolveTags(new MockProvider(tags), owner, repo, repoPath, undefined, 'v2.0.0', 'gitea', logger, 1000)
+      expect(fromTag.name).toBe('v1.0.0')
+    })
+
+    it('skips same-commit tags when @latest-release falls back to auto-detect', async () => {
+      const tags: TagInfo[] = [
+        {name: 'v3.7.14', sha: 'a', date: undefined},
+        {name: 'v3', sha: 'a', date: undefined},
+        {name: 'v3.7.13', sha: 'b', date: undefined}
+      ]
+      const {fromTag} = await resolveTags(
+        new MockProvider(tags, 'v3.7.14'), owner, repo, repoPath, '@latest-release', 'v3.7.14', 'gitea', logger, 1000
+      )
+      expect(fromTag.name).toBe('v3.7.13')
+    })
+
     it('throws when only one tag exists and fromTag must be auto-detected', async () => {
       const tags = makeTags('v1.0.0')
       await expect(

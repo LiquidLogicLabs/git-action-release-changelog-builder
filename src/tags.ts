@@ -193,8 +193,14 @@ export async function resolveTags(
   if (!fromTag) {
     const toTagIndex = allTags.findIndex((t: TagInfo) => t.name === toTag!.name)
     if (toTagIndex >= 0 && toTagIndex < allTags.length - 1) {
-      // Tags are sorted newest first, so the previous tag is at index + 1
-      fromTag = allTags[toTagIndex + 1]
+      // Tags are sorted newest first, so the previous tag is at index + 1. Tags on toTag's own
+      // commit (floating v3 / v3.7 tags moved onto the release) would give an empty changelog,
+      // so take the first earlier tag on a different commit when there is one.
+      const toSha = allTags[toTagIndex].sha
+      const differentCommit = toSha
+        ? allTags.slice(toTagIndex + 1).find((t: TagInfo) => t.sha && t.sha !== toSha)
+        : undefined
+      fromTag = differentCommit ?? allTags[toTagIndex + 1]
       fromTag = await provider.fillTagInformation(repositoryPath, owner, repo, fromTag)
       logger.info(`✓ Auto-detected fromTag (previous): ${fromTag.name}`)
     } else {
