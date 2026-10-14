@@ -1,3 +1,9 @@
+## [3.0.15](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.14...v3.0.15) (2026-10-14)
+
+
+### Bug Fixes
+
+* **gitea:** reach the runner's instance, name HTTP errors, skip same-commit tags ([21c29d0](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/commit/21c29d096167b7cdb80c1652be628da0b04097d5))
 ## [3.0.14](https://github.com/LiquidLogicLabs/git-action-release-changelog-builder/compare/v3.0.13...v3.0.14) (2026-09-09)
 
 
